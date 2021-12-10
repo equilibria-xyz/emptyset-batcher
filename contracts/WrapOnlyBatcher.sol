@@ -15,8 +15,8 @@ contract WrapOnlyBatcher is IBatcher, UOwnable {
     using Token6Lib for Token6;
 
     IEmptySetReserve public constant RESERVE = IEmptySetReserve(0xD05aCe63789cCb35B9cE71d01e4d632a0486Da4B);
-    Token18 public constant DSU = Token18.wrap(address(0x605D26FBd5be761089281d5cec2Ce86eeA667109));
-    Token6 public constant USDC = Token6.wrap(address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48));
+    Token18 public constant DSU = Token18.wrap(0x605D26FBd5be761089281d5cec2Ce86eeA667109);
+    Token6 public constant USDC = Token6.wrap(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
 
     constructor() {
         DSU.approve(address(RESERVE));
@@ -40,9 +40,7 @@ contract WrapOnlyBatcher is IBatcher, UOwnable {
     }
 
     function rebalance() public {
-        UFixed18 usdcBalance = USDC.balanceOf();
-        UFixed18 dsuBalance = USDC.balanceOf();
-
+        (UFixed18 usdcBalance, UFixed18 dsuBalance) = (USDC.balanceOf(), USDC.balanceOf());
         if (usdcBalance.isZero()) revert BatcherOnTargetError();
 
         RESERVE.mint(usdcBalance);
