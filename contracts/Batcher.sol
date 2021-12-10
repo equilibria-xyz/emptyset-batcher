@@ -5,6 +5,7 @@ import "./utils/types/Token18.sol";
 import "./utils/types/UFixed18.sol";
 
 //TODO: tests
+//TODO: owner
 contract Batcher {
     using UFixed18Lib for UFixed18;
     using Token18Lib for Token18;
@@ -67,6 +68,8 @@ contract Batcher {
 
         //TODO: reward, timelocked
     }
+
+    //TODO: close
 }
 
 interface IEmptySetReserve {

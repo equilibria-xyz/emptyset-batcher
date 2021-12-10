@@ -4,14 +4,6 @@ pragma solidity ^0.8.0;
 import "../types/Token18.sol";
 
 contract MockToken18 {
-    function etherToken() external pure returns (Token18) {
-        return Token18Lib.ETHER;
-    }
-
-    function isEther(Token18 token) external pure returns (bool) {
-        return Token18Lib.isEther(token);
-    }
-
     function push(Token18 self, address recipient) external {
         Token18Lib.push(self, recipient);
     }
@@ -36,7 +28,7 @@ contract MockToken18 {
         return Token18Lib.symbol(self);
     }
 
-    function decimals(Token18 self) external view returns (uint8) {
+    function decimals(Token18 self) external pure returns (uint8) {
         return Token18Lib.decimals(self);
     }
 
@@ -47,6 +39,4 @@ contract MockToken18 {
     function balanceOf(Token18 self, address account) external view returns (UFixed18) {
         return Token18Lib.balanceOf(self, account);
     }
-
-    receive() external payable { }
 }
