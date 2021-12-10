@@ -1,14 +1,16 @@
 //SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.10;
 
-import "./utils/types/Token18.sol";
 import "./utils/types/UFixed18.sol";
+import "./utils/types/Token18.sol";
+import "./utils/types/Token6.sol";
 
 //TODO: tests
 //TODO: owner
 contract Batcher {
     using UFixed18Lib for UFixed18;
     using Token18Lib for Token18;
+    using Token6Lib for Token6;
 
     error BalanceMismatch(UFixed18 oldBalance, UFixed18 newBalance);
 
@@ -16,9 +18,9 @@ contract Batcher {
     event Unwrap(address indexed to, UFixed18 amount);
     event Rebalance(UFixed18 newMinted, UFixed18 newRedeemed);
 
-    IEmptySetReserve public RESERVE = IEmptySetReserve(0xD05aCe63789cCb35B9cE71d01e4d632a0486Da4B);
-    Token18 public DSU = Token18.wrap(address(0x605D26FBd5be761089281d5cec2Ce86eeA667109));
-    Token18 public USDC = Token18.wrap(address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48));
+    IEmptySetReserve public constant RESERVE = IEmptySetReserve(0xD05aCe63789cCb35B9cE71d01e4d632a0486Da4B);
+    Token18 public constant DSU = Token18.wrap(address(0x605D26FBd5be761089281d5cec2Ce86eeA667109));
+    Token6 public constant USDC = Token6.wrap(address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48));
 
     UFixed18 public target;
 
@@ -30,7 +32,7 @@ contract Batcher {
     }
 
     function wrap(UFixed18 amount, address to) external {
-        USDC.pull(msg.sender, amount); //TODO: round up?
+        USDC.pull(msg.sender, amount, true);
         DSU.push(to, amount);
 
         emit Wrap(to, amount);
