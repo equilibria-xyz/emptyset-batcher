@@ -4,6 +4,14 @@ pragma solidity ^0.8.0;
 import "../types/Token18.sol";
 
 contract MockToken18 {
+    function approve(Token18 self, address grantee) external {
+        Token18Lib.approve(self, grantee);
+    }
+
+    function approve(Token18 self, address grantee, UFixed18 amount) external {
+        Token18Lib.approve(self, grantee, amount);
+    }
+
     function push(Token18 self, address recipient) external {
         Token18Lib.push(self, recipient);
     }

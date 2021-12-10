@@ -38,6 +38,74 @@ describe('Token', () => {
     })
   })
 
+  describe('#approve', async () => {
+    it('approves tokens (12)', async () => {
+      await erc20.mock.decimals.withArgs().returns(12)
+      await erc20.mock.allowance.withArgs(token.address, recipient.address).returns(0)
+      await erc20.mock.approve.withArgs(recipient.address, utils.parseEther('100').div(1000000)).returns(true)
+
+      await token
+        .connect(user)
+        ['approve(address,address,uint256)'](erc20.address, recipient.address, utils.parseEther('100'))
+    })
+
+    it('approves tokens (18)', async () => {
+      await erc20.mock.decimals.withArgs().returns(18)
+      await erc20.mock.allowance.withArgs(token.address, recipient.address).returns(0)
+      await erc20.mock.approve.withArgs(recipient.address, utils.parseEther('100')).returns(true)
+
+      await token
+        .connect(user)
+        ['approve(address,address,uint256)'](erc20.address, recipient.address, utils.parseEther('100'))
+    })
+
+    it('approves tokens (24)', async () => {
+      await erc20.mock.decimals.withArgs().returns(24)
+      await erc20.mock.allowance.withArgs(token.address, recipient.address).returns(0)
+      await erc20.mock.approve.withArgs(recipient.address, utils.parseEther('100').mul(1000000)).returns(true)
+
+      await token
+        .connect(user)
+        ['approve(address,address,uint256)'](erc20.address, recipient.address, utils.parseEther('100'))
+    })
+
+    it('approves tokens (ether)', async () => {
+      await expect(
+        token.connect(user)['approve(address,address,uint256)'](ETHER, recipient.address, utils.parseEther('100')),
+      ).to.be.revertedWith('TokenApproveEtherError()')
+    })
+
+    it('approves tokens all (12)', async () => {
+      await erc20.mock.decimals.withArgs().returns(12)
+      await erc20.mock.allowance.withArgs(token.address, recipient.address).returns(0)
+      await erc20.mock.approve.withArgs(recipient.address, ethers.constants.MaxUint256).returns(true)
+
+      await token.connect(user)['approve(address,address)'](erc20.address, recipient.address)
+    })
+
+    it('approves tokens all (18)', async () => {
+      await erc20.mock.decimals.withArgs().returns(18)
+      await erc20.mock.allowance.withArgs(token.address, recipient.address).returns(0)
+      await erc20.mock.approve.withArgs(recipient.address, ethers.constants.MaxUint256).returns(true)
+
+      await token.connect(user)['approve(address,address)'](erc20.address, recipient.address)
+    })
+
+    it('approves tokens all (24)', async () => {
+      await erc20.mock.decimals.withArgs().returns(24)
+      await erc20.mock.allowance.withArgs(token.address, recipient.address).returns(0)
+      await erc20.mock.approve.withArgs(recipient.address, ethers.constants.MaxUint256).returns(true)
+
+      await token.connect(user)['approve(address,address)'](erc20.address, recipient.address)
+    })
+
+    it('approves tokens all (ether)', async () => {
+      await expect(token.connect(user)['approve(address,address)'](ETHER, recipient.address)).to.be.revertedWith(
+        'TokenApproveEtherError()',
+      )
+    })
+  })
+
   describe('#push', async () => {
     it('transfers tokens (12)', async () => {
       await erc20.mock.decimals.withArgs().returns(12)

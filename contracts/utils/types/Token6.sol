@@ -24,6 +24,25 @@ library Token6Lib {
     uint256 private constant OFFSET = 10 ** (18 - DECIMALS);
 
     /**
+     * @notice Approves `grantee` to spend infinite tokens from the caller
+     * @param self Token to transfer
+     * @param grantee Address to allow spending
+     */
+    function approve(Token6 self, address grantee) internal {
+        IERC20(Token6.unwrap(self)).safeApprove(grantee, type(uint256).max);
+    }
+
+    /**
+     * @notice Approves `grantee` to spend `amount` tokens from the caller
+     * @param self Token to transfer
+     * @param grantee Address to allow spending
+     * @param amount Amount of tokens to approve to spend
+     */
+    function approve(Token6 self, address grantee, UFixed18 amount) internal {
+        IERC20(Token6.unwrap(self)).safeApprove(grantee, toTokenAmount(amount, false));
+    }
+
+    /**
      * @notice Transfers all held tokens from the caller to the `recipient`
      * @param self Token to transfer
      * @param recipient Address to receive the tokens

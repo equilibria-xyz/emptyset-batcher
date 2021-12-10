@@ -23,6 +23,25 @@ library Token18Lib {
     uint8 private constant DECIMALS = 18;
 
     /**
+     * @notice Approves `grantee` to spend infinite tokens from the caller
+     * @param self Token to transfer
+     * @param grantee Address to allow spending
+     */
+    function approve(Token18 self, address grantee) internal {
+        IERC20(Token18.unwrap(self)).safeApprove(grantee, type(uint256).max);
+    }
+
+    /**
+     * @notice Approves `grantee` to spend `amount` tokens from the caller
+     * @param self Token to transfer
+     * @param grantee Address to allow spending
+     * @param amount Amount of tokens to approve to spend
+     */
+    function approve(Token18 self, address grantee, UFixed18 amount) internal {
+        IERC20(Token18.unwrap(self)).safeApprove(grantee, UFixed18.unwrap(amount));
+    }
+
+    /**
      * @notice Transfers all held tokens from the caller to the `recipient`
      * @param self Token to transfer
      * @param recipient Address to receive the tokens

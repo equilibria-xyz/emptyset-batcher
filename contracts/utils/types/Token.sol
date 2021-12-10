@@ -21,6 +21,7 @@ library TokenLib {
     using SafeERC20 for IERC20;
 
     error TokenPullEtherError();
+    error TokenApproveEtherError();
 
     Token public constant ETHER = Token.wrap(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE));
 
@@ -31,6 +32,31 @@ library TokenLib {
      */
     function isEther(Token self) internal pure returns (bool) {
         return Token.unwrap(self) == Token.unwrap(ETHER);
+    }
+
+    /**
+     * @notice Approves `grantee` to spend infinite tokens from the caller
+     * @param self Token to transfer
+     * @param grantee Address to allow spending
+     */
+    function approve(Token self, address grantee) internal {
+        if (isEther(self)) revert TokenApproveEtherError();
+        IERC20(Token.unwrap(self)).safeApprove(grantee, type(uint256).max);
+    }
+
+    /**
+     * @notice Approves `grantee` to spend `amount` tokens from the caller
+     * @param self Token to transfer
+     * @param grantee Address to allow spending
+     * @param amount Amount of tokens to approve to spend
+     */
+    function approve(
+        Token self,
+        address grantee,
+        UFixed18 amount
+    ) internal {
+        if (isEther(self)) revert TokenApproveEtherError();
+        IERC20(Token.unwrap(self)).safeApprove(grantee, toTokenAmount(self, amount));
     }
 
     /**

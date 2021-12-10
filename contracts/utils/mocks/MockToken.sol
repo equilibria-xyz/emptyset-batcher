@@ -12,6 +12,14 @@ contract MockToken {
         return TokenLib.isEther(token);
     }
 
+    function approve(Token self, address grantee) external {
+        TokenLib.approve(self, grantee);
+    }
+
+    function approve(Token self, address grantee, UFixed18 amount) external {
+        TokenLib.approve(self, grantee, amount);
+    }
+
     function push(Token self, address recipient) external {
         TokenLib.push(self, recipient);
     }

@@ -20,6 +20,24 @@ describe('Token6', () => {
     erc20 = await waffle.deployMockContract(user, IERC20Metadata__factory.abi)
   })
 
+  describe('#approve', async () => {
+    it('approves tokens', async () => {
+      await erc20.mock.allowance.withArgs(token6.address, recipient.address).returns(0)
+      await erc20.mock.approve.withArgs(recipient.address, 100_000_000).returns(true)
+
+      await token6
+        .connect(user)
+        ['approve(address,address,uint256)'](erc20.address, recipient.address, utils.parseEther('100'))
+    })
+
+    it('approves tokens all', async () => {
+      await erc20.mock.allowance.withArgs(token6.address, recipient.address).returns(0)
+      await erc20.mock.approve.withArgs(recipient.address, ethers.constants.MaxUint256).returns(true)
+
+      await token6.connect(user)['approve(address,address)'](erc20.address, recipient.address)
+    })
+  })
+
   describe('#push', async () => {
     it('transfers tokens', async () => {
       await erc20.mock.transfer.withArgs(recipient.address, 100_000_000).returns(true)
