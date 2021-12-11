@@ -3,9 +3,7 @@ import { expect } from 'chai'
 import HRE, { waffle } from 'hardhat'
 
 import {
-  IBatcher,
   IEmptySetReserve__factory,
-  IERC20,
   IERC20__factory,
   WrapOnlyBatcher,
   WrapOnlyBatcher__factory,
@@ -17,8 +15,7 @@ import { nextContractAddress } from '../../testutil/contract'
 
 const { ethers } = HRE
 
-//TODO: coverage
-describe.only('WrapOnlyBatcher', () => {
+describe('WrapOnlyBatcher', () => {
   let user: SignerWithAddress
   let owner: SignerWithAddress
   let to: SignerWithAddress
