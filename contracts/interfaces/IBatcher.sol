@@ -7,9 +7,9 @@ interface IBatcher {
     event Wrap(address indexed to, UFixed18 amount);
     event Unwrap(address indexed to, UFixed18 amount);
     event Rebalance(UFixed18 newMinted, UFixed18 newRedeemed);
+    event Close(UFixed18 amount);
 
     error BatcherNotImplementedError();
-    error BatcherOnTargetError();
     error BatcherBalanceMismatchError(UFixed18 oldBalance, UFixed18 newBalance);
 
     function totalBalance() external view returns (UFixed18);

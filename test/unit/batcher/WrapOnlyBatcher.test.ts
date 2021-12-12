@@ -31,8 +31,8 @@ describe('WrapOnlyBatcher', () => {
     usdc = await waffle.deployMockContract(owner, IERC20__factory.abi)
 
     const batcherAddress = await nextContractAddress(owner, 2)
-    await dsu.mock.allowance.withArgs(batcherAddress, reserve.address).returns(0)
-    await dsu.mock.approve.withArgs(reserve.address, ethers.constants.MaxUint256).returns(true)
+    await usdc.mock.allowance.withArgs(batcherAddress, reserve.address).returns(0)
+    await usdc.mock.approve.withArgs(reserve.address, ethers.constants.MaxUint256).returns(true)
 
     batcher = await new WrapOnlyBatcher__factory(owner).deploy(reserve.address, dsu.address, usdc.address)
   })
@@ -145,16 +145,15 @@ describe('WrapOnlyBatcher', () => {
     })
 
     it('rebalances assets zero', async () => {
-      await dsu.mock.balanceOf.withArgs(batcher.address).returns(utils.parseEther('100').add(1))
+      await dsu.mock.balanceOf.withArgs(batcher.address).returns(utils.parseEther('100'))
       await usdc.mock.balanceOf.withArgs(batcher.address).returns(0)
 
-      await expect(batcher.connect(user).rebalance()).to.be.revertedWith('BatcherOnTargetError()')
+      await expect(batcher.connect(user).rebalance())
     })
   })
 
   describe('#close', async () => {
     it('closes', async () => {
-      await dsu.mock.balanceOf.withArgs(batcher.address).returns(utils.parseEther('100'))
       await usdc.mock.balanceOf.withArgs(batcher.address).returns(100_000_000)
 
       await reserve.mock.mint.withArgs(utils.parseEther('100')).returns()
@@ -162,11 +161,19 @@ describe('WrapOnlyBatcher', () => {
       await dsu.mock.balanceOf.withArgs(batcher.address).returns(utils.parseEther('200'))
       await dsu.mock.transfer.withArgs(reserve.address, utils.parseEther('200')).returns(true)
 
-      await expect(batcher.connect(owner).close()).to.emit(batcher, 'Rebalance').withArgs(utils.parseEther('100'), 0)
+      await expect(batcher.connect(owner).close()).to.emit(batcher, 'Close').withArgs(utils.parseEther('200'))
+    })
+
+    it('closes empty', async () => {
+      await usdc.mock.balanceOf.withArgs(batcher.address).returns(0)
+
+      await dsu.mock.balanceOf.withArgs(batcher.address).returns(utils.parseEther('100'))
+      await dsu.mock.transfer.withArgs(reserve.address, utils.parseEther('100')).returns(true)
+
+      await expect(batcher.connect(owner).close()).to.emit(batcher, 'Close').withArgs(utils.parseEther('100'))
     })
 
     it('closes rounding', async () => {
-      await dsu.mock.balanceOf.withArgs(batcher.address).returns(utils.parseEther('100').add(1))
       await usdc.mock.balanceOf.withArgs(batcher.address).returns(100_000_000)
 
       await reserve.mock.mint.withArgs(utils.parseEther('100')).returns()
@@ -174,20 +181,10 @@ describe('WrapOnlyBatcher', () => {
       await dsu.mock.balanceOf.withArgs(batcher.address).returns(utils.parseEther('200').add(1))
       await dsu.mock.transfer.withArgs(reserve.address, utils.parseEther('200').add(1)).returns(true)
 
-      await expect(batcher.connect(owner).close()).to.emit(batcher, 'Rebalance').withArgs(utils.parseEther('100'), 0)
-    })
-
-    it('closes zero', async () => {
-      await dsu.mock.balanceOf.withArgs(batcher.address).returns(utils.parseEther('100').add(1))
-      await usdc.mock.balanceOf.withArgs(batcher.address).returns(0)
-
-      await expect(batcher.connect(owner).close()).to.be.revertedWith('BatcherOnTargetError()')
+      await expect(batcher.connect(owner).close()).to.emit(batcher, 'Close').withArgs(utils.parseEther('200').add(1))
     })
 
     it('closes not owner', async () => {
-      await dsu.mock.balanceOf.withArgs(batcher.address).returns(utils.parseEther('100'))
-      await usdc.mock.balanceOf.withArgs(batcher.address).returns(100_000_000)
-
       await expect(batcher.connect(user).close()).to.be.revertedWith(`UOwnableNotOwnerError("${user.address}")`)
     })
   })
