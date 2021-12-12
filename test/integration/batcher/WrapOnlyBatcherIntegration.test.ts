@@ -2,9 +2,9 @@ import { expect } from 'chai'
 import 'hardhat'
 import { ethers, Signer, utils } from 'ethers'
 
-import { InstanceVars, deployProtocol, USDC_HOLDER } from './setupHelpers'
-import { WrapOnlyBatcher, WrapOnlyBatcher__factory } from '../../types/generated'
-import { impersonate } from '../testutil'
+import { InstanceVars, deployProtocol } from '../setupHelpers'
+import { WrapOnlyBatcher, WrapOnlyBatcher__factory } from '../../../types/generated'
+import { impersonate } from '../../testutil'
 
 describe('WrapOnlyBatcher', () => {
   let proto: InstanceVars
