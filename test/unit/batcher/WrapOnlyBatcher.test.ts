@@ -30,7 +30,9 @@ describe('WrapOnlyBatcher', () => {
     dsu = await waffle.deployMockContract(owner, IERC20__factory.abi)
     usdc = await waffle.deployMockContract(owner, IERC20__factory.abi)
 
-    const batcherAddress = await nextContractAddress(owner, 2)
+    const batcherAddress = await nextContractAddress(owner, 4)
+    await dsu.mock.allowance.withArgs(batcherAddress, reserve.address).returns(0)
+    await dsu.mock.approve.withArgs(reserve.address, ethers.constants.MaxUint256).returns(true)
     await usdc.mock.allowance.withArgs(batcherAddress, reserve.address).returns(0)
     await usdc.mock.approve.withArgs(reserve.address, ethers.constants.MaxUint256).returns(true)
 
@@ -154,32 +156,49 @@ describe('WrapOnlyBatcher', () => {
 
   describe('#close', async () => {
     it('closes', async () => {
+      // Rebalance
       await usdc.mock.balanceOf.withArgs(batcher.address).returns(100_000_000)
-
       await reserve.mock.mint.withArgs(utils.parseEther('100')).returns()
 
+      // Get balance and debt
+      await reserve.mock.debt.withArgs(batcher.address).returns(utils.parseEther('200'))
       await dsu.mock.balanceOf.withArgs(batcher.address).returns(utils.parseEther('200'))
+
+      // repay debt and last of balance
+      await reserve.mock.repay.withArgs(batcher.address, utils.parseEther('200')).returns()
       await dsu.mock.transfer.withArgs(reserve.address, utils.parseEther('200')).returns(true)
 
       await expect(batcher.connect(owner).close()).to.emit(batcher, 'Close').withArgs(utils.parseEther('200'))
     })
 
     it('closes empty', async () => {
+      // Rebalance
       await usdc.mock.balanceOf.withArgs(batcher.address).returns(0)
 
+      // Get balance and debt
+      await reserve.mock.debt.withArgs(batcher.address).returns(utils.parseEther('100'))
       await dsu.mock.balanceOf.withArgs(batcher.address).returns(utils.parseEther('100'))
+
+      // repay debt and last of balance
+      await reserve.mock.repay.withArgs(batcher.address, utils.parseEther('100')).returns()
       await dsu.mock.transfer.withArgs(reserve.address, utils.parseEther('100')).returns(true)
 
       await expect(batcher.connect(owner).close()).to.emit(batcher, 'Close').withArgs(utils.parseEther('100'))
     })
 
     it('closes rounding', async () => {
+      // Rebalance
       await usdc.mock.balanceOf.withArgs(batcher.address).returns(100_000_000)
-
       await reserve.mock.mint.withArgs(utils.parseEther('100')).returns()
 
+      // Get balance and debt
+      await reserve.mock.debt.withArgs(batcher.address).returns(utils.parseEther('200'))
       await dsu.mock.balanceOf.withArgs(batcher.address).returns(utils.parseEther('200').add(1))
-      await dsu.mock.transfer.withArgs(reserve.address, utils.parseEther('200').add(1)).returns(true)
+
+      // repay debt and last of balance
+      await reserve.mock.repay.withArgs(batcher.address, utils.parseEther('200')).returns()
+      await dsu.mock.transfer.withArgs(reserve.address, utils.parseEther('200')).returns(true)
+      await dsu.mock.transfer.withArgs(reserve.address, 1).returns(true)
 
       await expect(batcher.connect(owner).close()).to.emit(batcher, 'Close').withArgs(utils.parseEther('200').add(1))
     })

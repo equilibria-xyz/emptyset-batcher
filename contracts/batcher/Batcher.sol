@@ -21,6 +21,9 @@ abstract contract Batcher is IBatcher, UOwnable {
         DSU = dsu;
         USDC = usdc;
 
+        DSU.approve(address(RESERVE));
+        USDC.approve(address(RESERVE));
+
         UOwnable__initialize();
     }
 
@@ -60,13 +63,19 @@ abstract contract Batcher is IBatcher, UOwnable {
         if (!usdcBalance.isZero()) RESERVE.mint(usdcBalance);
 
         UFixed18 dsuBalance = DSU.balanceOf();
-        DSU.push(address(RESERVE), dsuBalance);
+        UFixed18 repayAmount = UFixed18Lib.min(RESERVE.debt(address(this)), dsuBalance);
+        UFixed18 returnAmount = dsuBalance.sub(repayAmount);
+
+        RESERVE.repay(address(this), repayAmount);
+        if (!returnAmount.isZero()) DSU.push(address(RESERVE), dsuBalance.sub(repayAmount));
 
         emit Close(dsuBalance);
     }
 }
 
 interface IEmptySetReserve {
+    function debt(address borrower) external view returns (UFixed18);
+    function repay(address borrower, UFixed18 amount) external;
     function mint(UFixed18 amount) external;
     function redeem(UFixed18 amount) external;
 }

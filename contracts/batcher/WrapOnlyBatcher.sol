@@ -12,9 +12,8 @@ contract WrapOnlyBatcher is Batcher {
     using Token6Lib for Token6;
 
     constructor(IEmptySetReserve reserve, Token18 dsu, Token6 usdc)
-    Batcher(reserve, dsu, usdc) {
-        USDC.approve(address(RESERVE));
-    }
+    Batcher(reserve, dsu, usdc)
+    { }
 
     function _wrap(UFixed18 amount, address to) override internal {
         USDC.pull(msg.sender, amount, true);

@@ -161,10 +161,9 @@ library TokenLib {
      * @return Token balance of the account
      */
     function balanceOf(Token self, address account) internal view returns (UFixed18) {
-        uint256 tokenAmount = isEther(self) ?
-            account.balance :
-            IERC20(Token.unwrap(self)).balanceOf(account);
-        return fromTokenAmount(self, tokenAmount);
+        return isEther(self) ?
+            UFixed18.wrap(account.balance) :
+            fromTokenAmount(self, IERC20(Token.unwrap(self)).balanceOf(account));
     }
 
     /**
