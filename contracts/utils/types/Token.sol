@@ -23,6 +23,7 @@ library TokenLib {
     error TokenPullEtherError();
     error TokenApproveEtherError();
 
+    uint256 private constant BASE = 1e18;
     Token public constant ETHER = Token.wrap(address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE));
 
     /**
@@ -80,7 +81,7 @@ library TokenLib {
         UFixed18 amount
     ) internal {
         isEther(self)
-            ? Address.sendValue(payable(recipient), toTokenAmount(self, amount))
+            ? Address.sendValue(payable(recipient), UFixed18.unwrap(amount))
             : IERC20(Token.unwrap(self)).safeTransfer(recipient, toTokenAmount(self, amount));
     }
 
@@ -174,7 +175,7 @@ library TokenLib {
      * @return Normalized token amount
      */
     function toTokenAmount(Token self, UFixed18 amount) private view returns (uint256) {
-        UFixed18 conversion = UFixed18Lib.ratio(10 ** uint256(decimals(self)), 10 ** 18);
+        UFixed18 conversion = UFixed18Lib.ratio(10 ** uint256(decimals(self)), BASE);
         return UFixed18.unwrap(amount.mul(conversion));
     }
 
@@ -186,7 +187,7 @@ library TokenLib {
      * @return Normalized unsigned fixed-decimal amount
      */
     function fromTokenAmount(Token self, uint256 amount) private view returns (UFixed18) {
-        UFixed18 conversion = UFixed18Lib.ratio(10 ** 18, 10 ** uint256(decimals(self)));
+        UFixed18 conversion = UFixed18Lib.ratio(BASE, 10 ** uint256(decimals(self)));
         return UFixed18.wrap(amount).mul(conversion);
     }
 }
