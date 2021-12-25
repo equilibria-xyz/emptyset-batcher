@@ -1,10 +1,10 @@
 //SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.10;
 
-import "../utils/types/UFixed18.sol";
-import "../utils/types/Token18.sol";
-import "../utils/types/Token6.sol";
-import "../utils/unstructured/UOwnable.sol";
+import "@equilibria/root/types/UFixed18.sol";
+import "@equilibria/root/types/Token18.sol";
+import "@equilibria/root/types/Token6.sol";
+import "@equilibria/root/unstructured/UOwnable.sol";
 import "../interfaces/IBatcher.sol";
 
 abstract contract Batcher is IBatcher, UOwnable {

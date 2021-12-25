@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.10;
 
-import "../utils/types/UFixed18.sol";
+import "@equilibria/root/types/UFixed18.sol";
 
 interface IBatcher {
     event Wrap(address indexed to, UFixed18 amount);

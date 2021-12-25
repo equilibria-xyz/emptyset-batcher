@@ -1,9 +1,9 @@
 //SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.10;
 
-import "../utils/types/UFixed18.sol";
-import "../utils/types/Token18.sol";
-import "../utils/types/Token6.sol";
+import "@equilibria/root/types/UFixed18.sol";
+import "@equilibria/root/types/Token18.sol";
+import "@equilibria/root/types/Token6.sol";
 import "./Batcher.sol";
 
 contract WrapOnlyBatcher is Batcher {
