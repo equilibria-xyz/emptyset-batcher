@@ -15,13 +15,6 @@ contract WrapOnlyBatcher is Batcher {
     Batcher(reserve, dsu, usdc)
     { }
 
-    function _wrap(UFixed18 amount, address to) override internal {
-        USDC.pull(msg.sender, amount, true);
-        DSU.push(to, amount);
-
-        emit Wrap(to, amount);
-    }
-
     function _unwrap(UFixed18 amount, address to) override internal {
         revert BatcherNotImplementedError();
     }

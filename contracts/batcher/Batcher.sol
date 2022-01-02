@@ -36,14 +36,20 @@ abstract contract Batcher is IBatcher, UOwnable {
         emit Wrap(to, amount);
     }
 
-    function _wrap(UFixed18 amount, address to) virtual internal;
+    function _wrap(UFixed18 amount, address to) virtual internal {
+        USDC.pull(msg.sender, amount, true);
+        DSU.push(to, amount);
+    }
 
     function unwrap(UFixed18 amount, address to) external {
         _unwrap(amount, to);
         emit Unwrap(to, amount);
     }
 
-    function _unwrap(UFixed18 amount, address to) virtual internal;
+    function _unwrap(UFixed18 amount, address to) virtual internal {
+        DSU.pull(msg.sender, amount);
+        USDC.push(to, amount);
+    }
 
     function rebalance() external {
         (UFixed18 usdcBalance, UFixed18 dsuBalance) = (USDC.balanceOf(), DSU.balanceOf());
