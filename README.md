@@ -1,4 +1,7 @@
-# Empty Set Batch Wrapping Contracts
+# Empty Set Batcher Contracts
+Contracts to manage batch wrapping and unwrapping `USDC` into `DSU` using the Empty Set protocol on L1 and L2.
+
+
 
 ## Usage
 
