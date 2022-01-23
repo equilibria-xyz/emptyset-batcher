@@ -26,6 +26,7 @@ const chainIds = {
   ropsten: 3,
 }
 
+const PRIVATE_KEY = process.env.PRIVATE_KEY || ''
 const MNEMONIC = process.env.MNEMONIC || ''
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || ''
 const INFURA_API_KEY = process.env.INFURA_API_KEY || ''
@@ -56,6 +57,20 @@ function createTestnetConfig(network: keyof typeof chainIds): NetworkUserConfig 
   }
 }
 
+function createGanacheConfig(): NetworkUserConfig {
+  const url = `http://127.0.0.1:8545`
+  return {
+    accounts: {
+      count: 10,
+      initialIndex: 0,
+      mnemonic: MNEMONIC,
+      path: "m/44'/60'/0'/0",
+    },
+    chainId: chainIds['ganache'],
+    url,
+  }
+}
+
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 
@@ -69,10 +84,10 @@ const config: HardhatUserConfig = {
       forking: {
         url: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_KEY}`,
         enabled: FORK_ENABLED,
-        blockNumber: 13579464,
       },
       chainId: chainIds.hardhat,
     },
+    ganache: createGanacheConfig(),
     goerli: createTestnetConfig('goerli'),
     kovan: createTestnetConfig('kovan'),
     rinkeby: createTestnetConfig('rinkeby'),
@@ -80,7 +95,11 @@ const config: HardhatUserConfig = {
     mainnet: {
       chainId: chainIds.mainnet,
       url: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_KEY}`,
+      accounts: [PRIVATE_KEY],
     },
+  },
+  namedAccounts: {
+    deployer: 0,
   },
   solidity: {
     compilers: [
@@ -106,6 +125,8 @@ const config: HardhatUserConfig = {
     contracts: [{ artifacts: 'external/contracts' }],
     deployments: {
       mainnet: ['external/deployments/mainnet'],
+      ropsten: ['external/deployments/ropsten'],
+      ganache: ['external/deployments/ganache'],
       hardhat: [FORK_ENABLED ? 'external/deployments/mainnet' : ''],
     },
   },

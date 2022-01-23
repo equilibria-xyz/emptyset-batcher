@@ -7,6 +7,10 @@
   "scripts": {
     "build": "yarn compile",
     "compile": "hardhat compile",
+    "deploy": "hardhat deploy --network hardhat",
+    "verify": "hardhat etherscan-verify",
+    "deploy:ropsten": "hardhat deploy --network ropsten",
+    "deploy:mainnet": "hardhat deploy --network mainnet",
     "gasReport": "REPORT_GAS=true yarn test-integration",
     "test": "hardhat test ./test/unit/**/*",
     "test-integration": "FORK_ENABLED=true hardhat test ./test/integration/**/*",
