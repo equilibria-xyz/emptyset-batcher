@@ -114,6 +114,17 @@ const config: HardhatUserConfig = {
     compilers: [
       {
         version: '0.8.11',
+        settings: {
+          optimizer: {
+            enabled: false,
+            runs: 1000,
+          },
+          outputSelection: {
+            '*': {
+              '*': ['storageLayout'],
+            },
+          },
+        },
       },
     ],
   },
