@@ -27,11 +27,25 @@ const chainIds = {
 }
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY || ''
+const PRIVATE_KEY_TESTNET = process.env.PRIVATE_KEY_TESTNET || ''
 const MNEMONIC = process.env.MNEMONIC || ''
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || ''
 const INFURA_API_KEY = process.env.INFURA_API_KEY || ''
-const ALCHEMY_KEY = process.env.ALCHEMY_KEY || ''
+const ALCHEMY_MAINNET = process.env.ALCHEMY_MAINNET || ''
+const ALCHEMY_KOVAN = process.env.ALCHEMY_KOVAN || ''
 const FORK_ENABLED = process.env.FORK_ENABLED === 'true' || false
+
+function getUrl(networkName: string): string {
+  switch (networkName) {
+    case 'mainnet':
+    case 'mainnet-fork':
+      return ALCHEMY_MAINNET
+    case 'kovan':
+      return ALCHEMY_KOVAN
+    default:
+      return ''
+  }
+}
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -44,16 +58,10 @@ task('accounts', 'Prints the list of accounts', async (args, hre) => {
 })
 
 function createTestnetConfig(network: keyof typeof chainIds): NetworkUserConfig {
-  const url = `https://${network}.infura.io/v3/${INFURA_API_KEY}`
   return {
-    accounts: {
-      count: 10,
-      initialIndex: 0,
-      mnemonic: MNEMONIC,
-      path: "m/44'/60'/0'/0",
-    },
+    accounts: [PRIVATE_KEY_TESTNET],
     chainId: chainIds[network],
-    url,
+    url: getUrl(network),
   }
 }
 
@@ -82,8 +90,9 @@ const config: HardhatUserConfig = {
         mnemonic: MNEMONIC,
       },
       forking: {
-        url: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_KEY}`,
+        url: getUrl('mainnet'),
         enabled: FORK_ENABLED,
+        blockNumber: 14343954,
       },
       chainId: chainIds.hardhat,
     },
@@ -94,7 +103,7 @@ const config: HardhatUserConfig = {
     ropsten: createTestnetConfig('ropsten'),
     mainnet: {
       chainId: chainIds.mainnet,
-      url: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_KEY}`,
+      url: getUrl('mainnet'),
       accounts: [PRIVATE_KEY],
     },
   },

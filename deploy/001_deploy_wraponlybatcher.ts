@@ -1,15 +1,20 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { DeployFunction } from 'hardhat-deploy/types'
-import { TIMELOCK_ADDRESS, DSU_ADDRESS, RESERVE_ADDRESS, USDC_ADDRESS } from '../test/integration/setupHelpers'
+import { getContracts } from '../test/integration/constant'
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts } = hre
-  const { deploy, execute } = deployments
+  const { deploy, execute, getNetworkName } = deployments
   const { deployer } = await getNamedAccounts()
+  const networkName = getNetworkName()
+  const contracts = getContracts(networkName)
+  if (contracts == null) {
+    throw `Unsupported network: ${networkName}`
+  }
 
   await deploy('WrapOnlyBatcher', {
     from: deployer,
-    args: [RESERVE_ADDRESS, DSU_ADDRESS, USDC_ADDRESS],
+    args: [contracts.RESERVE, contracts.DSU, contracts.USDC],
     gasLimit: 2000000,
     skipIfAlreadyDeployed: true,
     log: true,
@@ -25,7 +30,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       autoMine: true,
     },
     'setPendingOwner',
-    TIMELOCK_ADDRESS,
+    contracts.TIMELOCK,
   )
 }
 
