@@ -1,0 +1,25 @@
+{
+  "name": "@equilibria/emptyset-batcher",
+  "description": "Batch wrapping contracts for the Empty Set protocol.",
+  "version": "0.0.1",
+  "files": [
+    "/interfaces/**/*.sol",
+    "/batcher/Batcher.sol"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/equilibria-xyz/emptyset-batcher.git"
+  },
+  "keywords": [
+    "solidity",
+    "smart",
+    "contracts",
+    "emptyset",
+    "empty",
+    "set"
+  ],
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/equilibria-xyz/emptyset-batcher/issues"
+  }
+}
