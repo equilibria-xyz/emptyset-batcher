@@ -1,7 +1,7 @@
 {
   "name": "@equilibria/emptyset-batcher",
   "description": "Batch wrapping contracts for the Empty Set protocol.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "files": [
     "/interfaces/**/*.sol",
     "/batcher/Batcher.sol"
