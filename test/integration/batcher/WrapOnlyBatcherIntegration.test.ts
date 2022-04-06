@@ -19,7 +19,7 @@ describe('WrapOnlyBatcher', () => {
       proto.dsu.address,
       proto.usdc.address,
     )
-    await batcher.setPendingOwner(proto.timelock.address)
+    await batcher.updatePendingOwner(proto.timelock.address)
     reserveImpersonator = await impersonate.impersonateWithBalance(proto.reserve.address, utils.parseEther('10'))
   })
 

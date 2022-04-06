@@ -1,10 +1,10 @@
 //SPDX-License-Identifier: Apache-2.0
-pragma solidity 0.8.11;
+pragma solidity 0.8.13;
 
-import "@equilibria/root/types/UFixed18.sol";
-import "@equilibria/root/types/Token18.sol";
-import "@equilibria/root/types/Token6.sol";
-import "@equilibria/root/unstructured/UOwnable.sol";
+import "@equilibria/root/number/types/UFixed18.sol";
+import "@equilibria/root/token/types/Token18.sol";
+import "@equilibria/root/token/types/Token6.sol";
+import "@equilibria/root/control/unstructured/UOwnable.sol";
 import "../interfaces/IBatcher.sol";
 
 abstract contract Batcher is IBatcher, UOwnable {
@@ -24,7 +24,7 @@ abstract contract Batcher is IBatcher, UOwnable {
         DSU.approve(address(RESERVE));
         USDC.approve(address(RESERVE));
 
-        UOwnable__initialize();
+        __UOwnable__initialize();
     }
 
     function totalBalance() public view returns (UFixed18) {
