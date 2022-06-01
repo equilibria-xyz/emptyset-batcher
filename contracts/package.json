@@ -1,7 +1,7 @@
 {
   "name": "@equilibria/emptyset-batcher",
   "description": "Batch wrapping contracts for the Empty Set protocol.",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "files": [
     "/interfaces/**/*.sol",
     "/batcher/Batcher.sol"
@@ -23,7 +23,7 @@
     "url": "https://github.com/equilibria-xyz/emptyset-batcher/issues"
   },
   "dependencies": {
-    "@openzeppelin/root": "0.1.5",
+    "@equilibria/root": "0.1.5",
     "@openzeppelin/contracts": "4.6.0"
   }
 }
