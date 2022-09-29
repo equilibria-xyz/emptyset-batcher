@@ -2,7 +2,7 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { DeployFunction } from 'hardhat-deploy/types'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { getContracts } from '../test/integration/constant'
-import { WrapOnlyBatcher, WrapOnlyBatcher__factory } from '../types/generated'
+import { WrapOnlyBatcher__factory } from '../types/generated'
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, ethers } = hre
@@ -24,9 +24,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     autoMine: true,
   })
 
-  const wrapOnlyBatcher: WrapOnlyBatcher = new WrapOnlyBatcher__factory(deployerSigner).attach(
-    (await get('WrapOnlyBatcher')).address,
-  )
+  const wrapOnlyBatcher = new WrapOnlyBatcher__factory(deployerSigner).attach((await get('WrapOnlyBatcher')).address)
 
   if ((await wrapOnlyBatcher.pendingOwner()) === contracts.TIMELOCK) {
     console.log('WrapOnlyBatcher pending owner already initialized.')
