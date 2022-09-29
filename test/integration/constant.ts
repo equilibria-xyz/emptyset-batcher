@@ -28,6 +28,15 @@ export function getContracts(networkName: string): Contracts | null {
         TIMELOCK: '0xf6C02E15187c9b466E81B3aC72cCf32569EB19eD',
         USDC_HOLDER: '0xd04fd1cda37f81bc0b46b5dcadfa00c239191988',
       }
+    case 'goerli':
+      return {
+        DSU: '0x237D7a40d3A28aA5dAAb786570d3d8bf8496e497',
+        USDC: '0x07865c6E87B9F70255377e024ace6630C1Eaa37F',
+        C_USDC: '0x73506770799Eb04befb5AaE4734e58C2C624F493',
+        RESERVE: '0xbdA59A4405AD32cF81887B54ef5e6D5cB2177d52',
+        TIMELOCK: '0x84A9AC1920540382Ee1Ce15584bFB731d9988782',
+        USDC_HOLDER: '0x797c7ab9a2a29089b643e0b97d70fab7d2a07ddd',
+      }
     default:
       return null
   }

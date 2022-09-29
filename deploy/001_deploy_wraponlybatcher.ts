@@ -1,11 +1,14 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { DeployFunction } from 'hardhat-deploy/types'
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { getContracts } from '../test/integration/constant'
+import { WrapOnlyBatcher__factory } from '../types/generated'
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const { deployments, getNamedAccounts } = hre
-  const { deploy, execute, getNetworkName } = deployments
+  const { deployments, getNamedAccounts, ethers } = hre
+  const { deploy, get, getNetworkName } = deployments
   const { deployer } = await getNamedAccounts()
+  const deployerSigner: SignerWithAddress = await ethers.getSigner(deployer)
   const networkName = getNetworkName()
   const contracts = getContracts(networkName)
   if (contracts == null) {
@@ -21,17 +24,15 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     autoMine: true,
   })
 
-  await execute(
-    'WrapOnlyBatcher',
-    {
-      from: deployer,
-      gasLimit: 120000,
-      log: true,
-      autoMine: true,
-    },
-    'setPendingOwner',
-    contracts.TIMELOCK,
-  )
+  const wrapOnlyBatcher = new WrapOnlyBatcher__factory(deployerSigner).attach((await get('WrapOnlyBatcher')).address)
+
+  if ((await wrapOnlyBatcher.pendingOwner()) === contracts.TIMELOCK) {
+    console.log('WrapOnlyBatcher pending owner already initialized.')
+  } else {
+    process.stdout.write('initializing WrapOnlyBatcher pending owner... ')
+    await (await wrapOnlyBatcher.updatePendingOwner(contracts.TIMELOCK)).wait(2)
+    process.stdout.write('complete.\n')
+  }
 }
 
 export default func
