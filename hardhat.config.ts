@@ -33,6 +33,7 @@ const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || ''
 const INFURA_API_KEY = process.env.INFURA_API_KEY || ''
 const ALCHEMY_MAINNET = process.env.ALCHEMY_MAINNET || ''
 const ALCHEMY_KOVAN = process.env.ALCHEMY_KOVAN || ''
+const ALCHEMY_GOERLI = process.env.ALCHEMY_GOERLI || ''
 const FORK_ENABLED = process.env.FORK_ENABLED === 'true' || false
 
 function getUrl(networkName: string): string {
@@ -42,6 +43,8 @@ function getUrl(networkName: string): string {
       return ALCHEMY_MAINNET
     case 'kovan':
       return ALCHEMY_KOVAN
+    case 'goerli':
+      return ALCHEMY_GOERLI
     default:
       return ''
   }
