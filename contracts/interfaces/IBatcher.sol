@@ -2,6 +2,8 @@
 pragma solidity ^0.8.13;
 
 import "@equilibria/root/number/types/UFixed18.sol";
+import "@equilibria/root/token/types/Token18.sol";
+import "@equilibria/root/token/types/Token6.sol";
 
 interface IBatcher {
     event Wrap(address indexed to, UFixed18 amount);
@@ -12,8 +14,19 @@ interface IBatcher {
     error BatcherNotImplementedError();
     error BatcherBalanceMismatchError(UFixed18 oldBalance, UFixed18 newBalance);
 
+    function RESERVE() external view returns (IEmptySetReserve);
+    function DSU() external view returns (Token18);
+    function USDC() external view returns (Token6);
+
     function totalBalance() external view returns (UFixed18);
     function wrap(UFixed18 amount, address to) external;
     function unwrap(UFixed18 amount, address to) external;
     function rebalance() external;
+}
+
+interface IEmptySetReserve {
+    function debt(address borrower) external view returns (UFixed18);
+    function repay(address borrower, UFixed18 amount) external;
+    function mint(UFixed18 amount) external;
+    function redeem(UFixed18 amount) external;
 }

@@ -62,7 +62,7 @@ task('accounts', 'Prints the list of accounts', async (args, hre) => {
 
 function createTestnetConfig(network: keyof typeof chainIds): NetworkUserConfig {
   return {
-    accounts: [PRIVATE_KEY_TESTNET],
+    accounts: PRIVATE_KEY_TESTNET ? [PRIVATE_KEY_TESTNET] : [],
     chainId: chainIds[network],
     url: getUrl(network),
   }
@@ -107,7 +107,7 @@ const config: HardhatUserConfig = {
     mainnet: {
       chainId: chainIds.mainnet,
       url: getUrl('mainnet'),
-      accounts: [PRIVATE_KEY],
+      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
     },
   },
   namedAccounts: {

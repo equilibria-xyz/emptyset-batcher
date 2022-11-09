@@ -51,7 +51,7 @@ abstract contract Batcher is IBatcher, UOwnable {
         USDC.push(to, amount);
     }
 
-    function rebalance() external {
+    function rebalance() public {
         (UFixed18 usdcBalance, UFixed18 dsuBalance) = (USDC.balanceOf(), DSU.balanceOf());
 
         _rebalance(USDC.balanceOf(), DSU.balanceOf());
@@ -77,11 +77,4 @@ abstract contract Batcher is IBatcher, UOwnable {
 
         emit Close(dsuBalance);
     }
-}
-
-interface IEmptySetReserve {
-    function debt(address borrower) external view returns (UFixed18);
-    function repay(address borrower, UFixed18 amount) external;
-    function mint(UFixed18 amount) external;
-    function redeem(UFixed18 amount) external;
 }
