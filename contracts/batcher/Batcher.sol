@@ -56,10 +56,14 @@ abstract contract Batcher is IBatcher, UOwnable {
 
         _rebalance(USDC.balanceOf(), DSU.balanceOf());
 
+        UFixed18 newDsuBalance = DSU.balanceOf();
         (UFixed18 oldBalance, UFixed18 newBalance) = (usdcBalance.add(dsuBalance), totalBalance());
         if (!oldBalance.eq(newBalance)) revert BatcherBalanceMismatchError(oldBalance, newBalance);
 
-        emit Rebalance(usdcBalance, UFixed18Lib.ZERO);
+        emit Rebalance(
+            newDsuBalance.gt(dsuBalance) ? newDsuBalance.sub(dsuBalance) : UFixed18Lib.ZERO,
+            dsuBalance.gt(newDsuBalance) ? dsuBalance.sub(newDsuBalance) : UFixed18Lib.ZERO
+        );
     }
 
     function _rebalance(UFixed18 usdcBalance, UFixed18 dsuBalance) virtual internal;
@@ -73,7 +77,7 @@ abstract contract Batcher is IBatcher, UOwnable {
         UFixed18 returnAmount = dsuBalance.sub(repayAmount);
 
         RESERVE.repay(address(this), repayAmount);
-        if (!returnAmount.isZero()) DSU.push(address(RESERVE), dsuBalance.sub(repayAmount));
+        if (!returnAmount.isZero()) DSU.push(address(RESERVE), returnAmount);
 
         emit Close(dsuBalance);
     }
