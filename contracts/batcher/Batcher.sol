@@ -54,11 +54,11 @@ abstract contract Batcher is IBatcher, UOwnable {
     function rebalance() external {
         (UFixed18 usdcBalance, UFixed18 dsuBalance) = (USDC.balanceOf(), DSU.balanceOf());
 
-        _rebalance(USDC.balanceOf(), DSU.balanceOf());
+        _rebalance(usdcBalance, dsuBalance);
 
         UFixed18 newDsuBalance = DSU.balanceOf();
         (UFixed18 oldBalance, UFixed18 newBalance) = (usdcBalance.add(dsuBalance), totalBalance());
-        if (!oldBalance.eq(newBalance)) revert BatcherBalanceMismatchError(oldBalance, newBalance);
+        if (oldBalance.gt(newBalance)) revert BatcherBalanceMismatchError(oldBalance, newBalance);
 
         emit Rebalance(
             newDsuBalance.gt(dsuBalance) ? newDsuBalance.sub(dsuBalance) : UFixed18Lib.ZERO,
