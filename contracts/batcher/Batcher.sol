@@ -27,6 +27,18 @@ abstract contract Batcher is IBatcher, UOwnable {
         __UOwnable__initialize();
     }
 
+    function reserve() external view returns (address) {
+        return address(RESERVE);
+    }
+
+    function usdc() external view returns (address) {
+        return Token6.unwrap(USDC);
+    }
+
+    function dsu() external view returns (address) {
+        return Token18.unwrap(DSU);
+    }
+
     function totalBalance() public view returns (UFixed18) {
         return DSU.balanceOf().add(USDC.balanceOf());
     }

@@ -38,14 +38,17 @@ describe('WrapOnlyBatcher', () => {
   describe('#constructor', async () => {
     it('sets reserve', async () => {
       expect(await batcher.RESERVE()).to.equal(reserve.address)
+      expect(await batcher.reserve()).to.equal(reserve.address)
     })
 
     it('sets dsu', async () => {
       expect(await batcher.DSU()).to.equal(dsu.address)
+      expect(await batcher.dsu()).to.equal(dsu.address)
     })
 
     it('sets usdc', async () => {
       expect(await batcher.USDC()).to.equal(usdc.address)
+      expect(await batcher.usdc()).to.equal(usdc.address)
     })
   })
 

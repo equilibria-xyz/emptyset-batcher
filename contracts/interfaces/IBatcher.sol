@@ -12,6 +12,10 @@ interface IBatcher {
     error BatcherNotImplementedError();
     error BatcherBalanceMismatchError(UFixed18 oldBalance, UFixed18 newBalance);
 
+    function reserve() external view returns (address);
+    function usdc() external view returns (address);
+    function dsu() external view returns (address);
+
     function totalBalance() external view returns (UFixed18);
     function wrap(UFixed18 amount, address to) external;
     function unwrap(UFixed18 amount, address to) external;
