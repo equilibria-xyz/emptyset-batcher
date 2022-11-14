@@ -32,7 +32,7 @@ contract TwoWayBatcher is UReentrancyGuard, Batcher {
     }
 
     function repayUSDC(UFixed18 amount) external nonReentrant {
-        if (USDC.balanceOf(address(this)).lt(amount)) {
+        if (USDC.balanceOf().lt(amount)) {
             rebalance();
         }
 
@@ -58,6 +58,19 @@ contract TwoWayBatcher is UReentrancyGuard, Batcher {
         // totalUSDCLoans < usdcBalance: deposit excess USDC
         } else if (cmpResult == 0) {
             RESERVE.mint(usdcBalance.sub(usdcLoansOutstanding));
+        }
+    }
+
+    function _close(UFixed18 usdcBalance) override internal {
+        // totalUSDCLoans == usdcBalance: Do Nothing
+        if (usdcLoansOutstanding.eq(usdcBalance)) {
+            return;
+
+        // totalUSDCLoans != usdcBalance: rebalance so we have exactly the amount of USDC needed to repay loans.
+        // If we currently have excess USDC, it will be redeemed
+        // If we curerntly have too little USDC, it will be minted
+        } else {
+            rebalance();
         }
     }
 }

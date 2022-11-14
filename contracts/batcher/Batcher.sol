@@ -66,7 +66,8 @@ abstract contract Batcher is IBatcher, UOwnable {
 
     function close() external onlyOwner {
         UFixed18 usdcBalance = USDC.balanceOf();
-        if (!usdcBalance.isZero()) RESERVE.mint(usdcBalance);
+
+        _close(usdcBalance);
 
         UFixed18 dsuBalance = DSU.balanceOf();
         UFixed18 repayAmount = UFixed18Lib.min(RESERVE.debt(address(this)), dsuBalance);
@@ -77,4 +78,6 @@ abstract contract Batcher is IBatcher, UOwnable {
 
         emit Close(dsuBalance);
     }
+
+    function _close(UFixed18 usdcBalance) virtual internal;
 }

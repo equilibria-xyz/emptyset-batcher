@@ -24,4 +24,9 @@ contract WrapOnlyBatcher is Batcher {
 
         RESERVE.mint(usdcBalance);
     }
+
+    function _close(UFixed18 usdcBalance) override internal {
+        // If we have excess usdc, rebalance it to mint DSU
+        if (!usdcBalance.isZero()) rebalance();
+    }
 }
