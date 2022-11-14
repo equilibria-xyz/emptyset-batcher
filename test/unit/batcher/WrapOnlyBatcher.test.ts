@@ -38,17 +38,14 @@ describe('WrapOnlyBatcher', () => {
   describe('#constructor', async () => {
     it('sets reserve', async () => {
       expect(await batcher.RESERVE()).to.equal(reserve.address)
-      expect(await batcher.reserve()).to.equal(reserve.address)
     })
 
     it('sets dsu', async () => {
       expect(await batcher.DSU()).to.equal(dsu.address)
-      expect(await batcher.dsu()).to.equal(dsu.address)
     })
 
     it('sets usdc', async () => {
       expect(await batcher.USDC()).to.equal(usdc.address)
-      expect(await batcher.usdc()).to.equal(usdc.address)
     })
   })
 
@@ -127,40 +124,40 @@ describe('WrapOnlyBatcher', () => {
   })
 
   // NOTE: The below tests don't work because of strangeness in smock.
-  // describe('#rebalance', async () => {
-  //   it('rebalances assets', async () => {
-  //     let mintCalled = false
+  describe.skip('#rebalance', async () => {
+    it('rebalances assets', async () => {
+      let mintCalled = false
 
-  //     dsu.balanceOf.returns(() => {
-  //       return mintCalled ? utils.parseEther('200') : utils.parseEther('100')
-  //     })
-  //     usdc.balanceOf.returns(() => {
-  //       return mintCalled ? 0 : 100_000_000
-  //     })
+      dsu.balanceOf.returns(() => {
+        return mintCalled ? utils.parseEther('200') : utils.parseEther('100')
+      })
+      usdc.balanceOf.returns(() => {
+        return mintCalled ? 0 : 100_000_000
+      })
 
-  //     reserve.mint.whenCalledWith(utils.parseEther('100')).returns(() => {
-  //       mintCalled = true
-  //     })
+      reserve.mint.whenCalledWith(utils.parseEther('100')).returns(() => {
+        mintCalled = true
+      })
 
-  //     await expect(batcher.connect(user).rebalance()).to.emit(batcher, 'Rebalance').withArgs(utils.parseEther('100'), 0)
-  //   })
+      await expect(batcher.connect(user).rebalance()).to.emit(batcher, 'Rebalance').withArgs(utils.parseEther('100'), 0)
+    })
 
-  //   it('rebalances assets rounding', async () => {
-  //     dsu.balanceOf.whenCalledWith(batcher.address).returns(utils.parseEther('100').add(1))
-  //     usdc.balanceOf.whenCalledWith(batcher.address).returns(100_000_000)
+    it('rebalances assets rounding', async () => {
+      dsu.balanceOf.whenCalledWith(batcher.address).returns(utils.parseEther('100').add(1))
+      usdc.balanceOf.whenCalledWith(batcher.address).returns(100_000_000)
 
-  //     reserve.mint.whenCalledWith(utils.parseEther('100')).returns()
+      reserve.mint.whenCalledWith(utils.parseEther('100')).returns()
 
-  //     await expect(batcher.connect(user).rebalance()).to.emit(batcher, 'Rebalance').withArgs(utils.parseEther('100'), 0)
-  //   })
+      await expect(batcher.connect(user).rebalance()).to.emit(batcher, 'Rebalance').withArgs(utils.parseEther('100'), 0)
+    })
 
-  //   it('rebalances assets zero', async () => {
-  //     dsu.balanceOf.whenCalledWith(batcher.address).returns(utils.parseEther('100'))
-  //     usdc.balanceOf.whenCalledWith(batcher.address).returns(0)
+    it('rebalances assets zero', async () => {
+      dsu.balanceOf.whenCalledWith(batcher.address).returns(utils.parseEther('100'))
+      usdc.balanceOf.whenCalledWith(batcher.address).returns(0)
 
-  //     await expect(batcher.connect(user).rebalance())
-  //   })
-  // })
+      await expect(batcher.connect(user).rebalance())
+    })
+  })
 
   describe('#close', async () => {
     it('closes', async () => {

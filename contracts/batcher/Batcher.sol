@@ -6,6 +6,7 @@ import "@equilibria/root/token/types/Token18.sol";
 import "@equilibria/root/token/types/Token6.sol";
 import "@equilibria/root/control/unstructured/UOwnable.sol";
 import "../interfaces/IBatcher.sol";
+import "../interfaces/IEmptySetReserve.sol";
 
 abstract contract Batcher is IBatcher, UOwnable {
     using UFixed18Lib for UFixed18;
@@ -25,18 +26,6 @@ abstract contract Batcher is IBatcher, UOwnable {
         USDC.approve(address(RESERVE));
 
         __UOwnable__initialize();
-    }
-
-    function reserve() external view returns (address) {
-        return address(RESERVE);
-    }
-
-    function usdc() external view returns (address) {
-        return Token6.unwrap(USDC);
-    }
-
-    function dsu() external view returns (address) {
-        return Token18.unwrap(DSU);
     }
 
     function totalBalance() public view returns (UFixed18) {
@@ -93,11 +82,4 @@ abstract contract Batcher is IBatcher, UOwnable {
 
         emit Close(dsuBalance);
     }
-}
-
-interface IEmptySetReserve {
-    function debt(address borrower) external view returns (UFixed18);
-    function repay(address borrower, UFixed18 amount) external;
-    function mint(UFixed18 amount) external;
-    function redeem(UFixed18 amount) external;
 }
