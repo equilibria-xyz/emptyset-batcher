@@ -6,6 +6,7 @@ import "@equilibria/root/token/types/Token18.sol";
 import "@equilibria/root/token/types/Token6.sol";
 import "@equilibria/root/control/unstructured/UOwnable.sol";
 import "../interfaces/IBatcher.sol";
+import "../interfaces/IEmptySetReserve.sol";
 
 abstract contract Batcher is IBatcher, UOwnable {
     using UFixed18Lib for UFixed18;
@@ -54,12 +55,16 @@ abstract contract Batcher is IBatcher, UOwnable {
     function rebalance() external {
         (UFixed18 usdcBalance, UFixed18 dsuBalance) = (USDC.balanceOf(), DSU.balanceOf());
 
-        _rebalance(USDC.balanceOf(), DSU.balanceOf());
+        _rebalance(usdcBalance, dsuBalance);
 
+        UFixed18 newDsuBalance = DSU.balanceOf();
         (UFixed18 oldBalance, UFixed18 newBalance) = (usdcBalance.add(dsuBalance), totalBalance());
-        if (!oldBalance.eq(newBalance)) revert BatcherBalanceMismatchError(oldBalance, newBalance);
+        if (oldBalance.gt(newBalance)) revert BatcherBalanceMismatchError(oldBalance, newBalance);
 
-        emit Rebalance(usdcBalance, UFixed18Lib.ZERO);
+        emit Rebalance(
+            newDsuBalance.gt(dsuBalance) ? newDsuBalance.sub(dsuBalance) : UFixed18Lib.ZERO,
+            dsuBalance.gt(newDsuBalance) ? dsuBalance.sub(newDsuBalance) : UFixed18Lib.ZERO
+        );
     }
 
     function _rebalance(UFixed18 usdcBalance, UFixed18 dsuBalance) virtual internal;
@@ -73,15 +78,8 @@ abstract contract Batcher is IBatcher, UOwnable {
         UFixed18 returnAmount = dsuBalance.sub(repayAmount);
 
         RESERVE.repay(address(this), repayAmount);
-        if (!returnAmount.isZero()) DSU.push(address(RESERVE), dsuBalance.sub(repayAmount));
+        if (!returnAmount.isZero()) DSU.push(address(RESERVE), returnAmount);
 
         emit Close(dsuBalance);
     }
-}
-
-interface IEmptySetReserve {
-    function debt(address borrower) external view returns (UFixed18);
-    function repay(address borrower, UFixed18 amount) external;
-    function mint(UFixed18 amount) external;
-    function redeem(UFixed18 amount) external;
 }
