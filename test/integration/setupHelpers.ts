@@ -17,6 +17,7 @@ export interface InstanceVars {
   timelock: SignerWithAddress
   deployer: SignerWithAddress
   user: SignerWithAddress
+  user2: SignerWithAddress
   reserve: IEmptySetReserve
   dsu: IERC20Metadata
   usdc: IERC20Metadata
@@ -25,7 +26,7 @@ export interface InstanceVars {
 
 export async function deployProtocol(): Promise<InstanceVars> {
   await time.reset(config)
-  const [deployer, user] = await ethers.getSigners()
+  const [deployer, user, user2] = await ethers.getSigners()
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const contracts = getContracts('mainnet')!
 
@@ -38,16 +39,18 @@ export async function deployProtocol(): Promise<InstanceVars> {
 
   // Set state
   const usdcHolder = await impersonate.impersonateWithBalance(contracts.USDC_HOLDER, utils.parseEther('10'))
-  await usdc.connect(usdcHolder).approve(reserve.address, 1000000_000_000)
+  await usdc.connect(usdcHolder).approve(reserve.address, 1_000_000_000_000)
   await reserve.connect(usdcHolder).mint(utils.parseEther('1000000'))
 
   await dsu.connect(usdcHolder).transfer(user.address, utils.parseEther('1000000'))
-  await usdc.connect(usdcHolder).transfer(user.address, 1000000_000_000)
+  await usdc.connect(usdcHolder).transfer(user.address, 1_000_000_000_000)
+  await usdc.connect(usdcHolder).transfer(user2.address, 1_000_000_000_000)
 
   return {
     timelock,
     deployer,
     user,
+    user2,
     reserve,
     dsu,
     usdc,

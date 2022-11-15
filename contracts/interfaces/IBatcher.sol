@@ -25,6 +25,9 @@ interface IBatcher {
 }
 
 interface IEmptySetReserve {
+    event Redeem(address indexed account, uint256 costAmount, uint256 redeemAmount);
+    event Mint(address indexed account, uint256 mintAmount, uint256 costAmount);
+
     function debt(address borrower) external view returns (UFixed18);
     function repay(address borrower, UFixed18 amount) external;
     function mint(UFixed18 amount) external;

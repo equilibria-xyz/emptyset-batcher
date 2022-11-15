@@ -15,8 +15,8 @@ contract TwoWayBatcher is UReentrancyGuard, Batcher {
     event USDCLoaned(address indexed depositor, UFixed18 amount);
     event USDCRepaid(address indexed depositor, UFixed18 amount);
 
-    UFixed18 usdcLoansOutstanding;
-    mapping(address => UFixed18) depositorToUSDCLoanAmount;
+    UFixed18 public usdcLoansOutstanding;
+    mapping(address => UFixed18) public depositorToUSDCLoanAmount;
 
     constructor(IEmptySetReserve reserve, Token18 dsu, Token6 usdc)
     Batcher(reserve, dsu, usdc)

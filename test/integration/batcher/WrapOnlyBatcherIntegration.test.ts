@@ -44,7 +44,7 @@ describe('WrapOnlyBatcher', () => {
 
     describe('#wrap', async () => {
       beforeEach(async () => {
-        await proto.usdc.connect(proto.user).approve(batcher.address, 1000000_000_000)
+        await proto.usdc.connect(proto.user).approve(batcher.address, 1_000_000_000_000)
       })
 
       it('wraps token exact', async () => {
@@ -58,7 +58,7 @@ describe('WrapOnlyBatcher', () => {
         expect(await proto.usdc.balanceOf(proto.timelock.address)).to.equal(0)
 
         expect(await proto.dsu.balanceOf(proto.user.address)).to.equal(0)
-        expect(await proto.usdc.balanceOf(proto.user.address)).to.equal(1000000_000_000 - 100_000_000)
+        expect(await proto.usdc.balanceOf(proto.user.address)).to.equal(1_000_000_000_000 - 100_000_000)
 
         expect(await proto.dsu.balanceOf(batcher.address)).to.equal(
           utils.parseEther('1000000').sub(utils.parseEther('100')),
@@ -81,7 +81,7 @@ describe('WrapOnlyBatcher', () => {
         expect(await proto.usdc.balanceOf(proto.timelock.address)).to.equal(0)
 
         expect(await proto.dsu.balanceOf(proto.user.address)).to.equal(0)
-        expect(await proto.usdc.balanceOf(proto.user.address)).to.equal(1000000_000_000 - 300_000_000)
+        expect(await proto.usdc.balanceOf(proto.user.address)).to.equal(1_000_000_000_000 - 300_000_000)
 
         expect(await proto.dsu.balanceOf(batcher.address)).to.equal(
           utils.parseEther('1000000').sub(utils.parseEther('300')),
@@ -104,7 +104,7 @@ describe('WrapOnlyBatcher', () => {
         expect(await proto.usdc.balanceOf(proto.timelock.address)).to.equal(0)
 
         expect(await proto.dsu.balanceOf(proto.user.address)).to.equal(utils.parseEther('200'))
-        expect(await proto.usdc.balanceOf(proto.user.address)).to.equal(1000000_000_000 - 300_000_000)
+        expect(await proto.usdc.balanceOf(proto.user.address)).to.equal(1_000_000_000_000 - 300_000_000)
 
         expect(await proto.dsu.balanceOf(batcher.address)).to.equal(
           utils.parseEther('1000000').sub(utils.parseEther('300')),
@@ -125,7 +125,7 @@ describe('WrapOnlyBatcher', () => {
         expect(await proto.usdc.balanceOf(proto.timelock.address)).to.equal(0)
 
         expect(await proto.dsu.balanceOf(proto.user.address)).to.equal(0)
-        expect(await proto.usdc.balanceOf(proto.user.address)).to.equal(1000000_000_000 - 100_000_001)
+        expect(await proto.usdc.balanceOf(proto.user.address)).to.equal(1_000_000_000_000 - 100_000_001)
 
         expect(await proto.dsu.balanceOf(batcher.address)).to.equal(
           utils.parseEther('1000000').sub(utils.parseEther('100')).sub(1),
@@ -148,7 +148,7 @@ describe('WrapOnlyBatcher', () => {
 
     describe('#rebalance', async () => {
       beforeEach(async () => {
-        await proto.usdc.connect(proto.user).approve(batcher.address, 1000000_000_000)
+        await proto.usdc.connect(proto.user).approve(batcher.address, 1_000_000_000_000)
       })
 
       it('rebalances assets', async () => {

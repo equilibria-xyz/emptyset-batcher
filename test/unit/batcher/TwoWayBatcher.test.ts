@@ -20,13 +20,14 @@ describe('TwoWayBatcher', () => {
   let owner: SignerWithAddress
   let to: SignerWithAddress
   let usdcLoaner: SignerWithAddress
+  let usdcLoaner2: SignerWithAddress
   let reserve: MockContract
   let dsu: MockContract
   let usdc: MockContract
   let batcher: TwoWayBatcher
 
   beforeEach(async () => {
-    ;[user, owner, to, usdcLoaner] = await ethers.getSigners()
+    ;[user, owner, to, usdcLoaner, usdcLoaner2] = await ethers.getSigners()
     reserve = await waffle.deployMockContract(owner, IEmptySetReserve__factory.abi)
     dsu = await waffle.deployMockContract(owner, IERC20__factory.abi)
     usdc = await waffle.deployMockContract(owner, IERC20__factory.abi)
@@ -107,6 +108,9 @@ describe('TwoWayBatcher', () => {
       await expect(batcher.connect(usdcLoaner).loanUSDC(utils.parseEther('100')))
         .to.emit(batcher, 'USDCLoaned')
         .withArgs(usdcLoaner.address, utils.parseEther('100'))
+
+      expect(await batcher.usdcLoansOutstanding()).to.equal(utils.parseEther('100'))
+      expect(await batcher.depositorToUSDCLoanAmount(usdcLoaner.address)).to.equal(utils.parseEther('100'))
     })
 
     it('loans token rounding', async () => {
@@ -115,6 +119,25 @@ describe('TwoWayBatcher', () => {
       await expect(batcher.connect(usdcLoaner).loanUSDC(utils.parseEther('100').add(1)))
         .to.emit(batcher, 'USDCLoaned')
         .withArgs(usdcLoaner.address, utils.parseEther('100').add(1))
+
+      expect(await batcher.usdcLoansOutstanding()).to.equal(utils.parseEther('100').add(1))
+      expect(await batcher.depositorToUSDCLoanAmount(usdcLoaner.address)).to.equal(utils.parseEther('100').add(1))
+    })
+
+    it('loans token multiple users', async () => {
+      await usdc.mock.transferFrom.withArgs(usdcLoaner.address, batcher.address, 100_000_000).returns(true)
+      await usdc.mock.transferFrom.withArgs(usdcLoaner2.address, batcher.address, 200_000_000).returns(true)
+
+      await expect(batcher.connect(usdcLoaner).loanUSDC(utils.parseEther('100')))
+        .to.emit(batcher, 'USDCLoaned')
+        .withArgs(usdcLoaner.address, utils.parseEther('100'))
+      await expect(batcher.connect(usdcLoaner2).loanUSDC(utils.parseEther('200')))
+        .to.emit(batcher, 'USDCLoaned')
+        .withArgs(usdcLoaner2.address, utils.parseEther('200'))
+
+      expect(await batcher.usdcLoansOutstanding()).to.equal(utils.parseEther('300'))
+      expect(await batcher.depositorToUSDCLoanAmount(usdcLoaner.address)).to.equal(utils.parseEther('100'))
+      expect(await batcher.depositorToUSDCLoanAmount(usdcLoaner2.address)).to.equal(utils.parseEther('200'))
     })
   })
 
@@ -130,6 +153,9 @@ describe('TwoWayBatcher', () => {
       await expect(batcher.connect(usdcLoaner).repayUSDC(utils.parseEther('100')))
         .to.emit(batcher, 'USDCRepaid')
         .withArgs(usdcLoaner.address, utils.parseEther('100'))
+
+      expect(await batcher.usdcLoansOutstanding()).to.equal(0)
+      expect(await batcher.depositorToUSDCLoanAmount(usdcLoaner.address)).to.equal(0)
     })
 
     it('repays token rounding', async () => {
@@ -143,6 +169,46 @@ describe('TwoWayBatcher', () => {
       await expect(batcher.connect(usdcLoaner).repayUSDC(utils.parseEther('100').add(1)))
         .to.emit(batcher, 'USDCRepaid')
         .withArgs(usdcLoaner.address, utils.parseEther('100').add(1))
+
+      expect(await batcher.usdcLoansOutstanding()).to.equal(0)
+      expect(await batcher.depositorToUSDCLoanAmount(usdcLoaner.address)).to.equal(0)
+    })
+
+    it('repays token partial rounding', async () => {
+      // Loan the amount
+      await usdc.mock.transferFrom.withArgs(usdcLoaner.address, batcher.address, 100_000_001).returns(true)
+      await batcher.connect(usdcLoaner).loanUSDC(utils.parseEther('100').add(1))
+
+      await usdc.mock.balanceOf.withArgs(batcher.address).returns(100_000_001)
+      await usdc.mock.transfer.withArgs(usdcLoaner.address, 50_000_000).returns(true)
+
+      await expect(batcher.connect(usdcLoaner).repayUSDC(utils.parseEther('50').add(1)))
+        .to.emit(batcher, 'USDCRepaid')
+        .withArgs(usdcLoaner.address, utils.parseEther('50').add(1))
+
+      expect(await batcher.usdcLoansOutstanding()).to.equal(utils.parseEther('50'))
+      expect(await batcher.depositorToUSDCLoanAmount(usdcLoaner.address)).to.equal(utils.parseEther('50'))
+    })
+
+    it('repays token multiple users', async () => {
+      await usdc.mock.transferFrom.withArgs(usdcLoaner.address, batcher.address, 100_000_000).returns(true)
+      await usdc.mock.transferFrom.withArgs(usdcLoaner2.address, batcher.address, 200_000_000).returns(true)
+      await batcher.connect(usdcLoaner).loanUSDC(utils.parseEther('100'))
+      await batcher.connect(usdcLoaner2).loanUSDC(utils.parseEther('200'))
+
+      await usdc.mock.balanceOf.withArgs(batcher.address).returns(300_000_000)
+      await usdc.mock.transfer.withArgs(usdcLoaner.address, 100_000_000).returns(true)
+      await usdc.mock.transfer.withArgs(usdcLoaner2.address, 101_000_000).returns(true)
+      await expect(batcher.connect(usdcLoaner).repayUSDC(utils.parseEther('100')))
+        .to.emit(batcher, 'USDCRepaid')
+        .withArgs(usdcLoaner.address, utils.parseEther('100'))
+      await expect(batcher.connect(usdcLoaner2).repayUSDC(utils.parseEther('101')))
+        .to.emit(batcher, 'USDCRepaid')
+        .withArgs(usdcLoaner2.address, utils.parseEther('101'))
+
+      expect(await batcher.usdcLoansOutstanding()).to.equal(utils.parseEther('99'))
+      expect(await batcher.depositorToUSDCLoanAmount(usdcLoaner.address)).to.equal(0)
+      expect(await batcher.depositorToUSDCLoanAmount(usdcLoaner2.address)).to.equal(utils.parseEther('99'))
     })
 
     it('repays token rebalance required', async () => {
@@ -159,6 +225,9 @@ describe('TwoWayBatcher', () => {
       await expect(batcher.connect(usdcLoaner).repayUSDC(utils.parseEther('100')))
         .to.emit(batcher, 'USDCRepaid')
         .withArgs(usdcLoaner.address, utils.parseEther('100'))
+
+      expect(await batcher.usdcLoansOutstanding()).to.equal(0)
+      expect(await batcher.depositorToUSDCLoanAmount(usdcLoaner.address)).to.equal(0)
     })
 
     it('reverts on excess repayment', async () => {
@@ -259,7 +328,7 @@ describe('TwoWayBatcher', () => {
 
       await reserve.mock.redeem.withArgs(utils.parseEther('10')).returns()
 
-      await expect(batcher.connect(user).rebalance()).to.emit(batcher, 'Rebalance').withArgs(0, 0)
+      await expect(batcher.connect(user).rebalance()).to.emit(batcher, 'Rebalance').withArgs(0, 0) // TODO(arjun): fix event args
     })
   })
 
