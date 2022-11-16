@@ -1,10 +1,15 @@
 import { expect } from 'chai'
-import 'hardhat'
-import { ethers, Signer, utils } from 'ethers'
+import HRE from 'hardhat'
+import { Signer, utils, constants } from 'ethers'
 
 import { InstanceVars, deployProtocol } from '../setupHelpers'
 import { TwoWayBatcher, TwoWayBatcher__factory } from '../../../types/generated'
 import { impersonate } from '../../testutil'
+import { impersonateWithBalance } from '../../testutil/impersonate'
+
+const { ethers } = HRE
+
+const HARDCODED_RESERVE_BORROWER_ADDRESS = '0x0B663CeaCEF01f2f88EB7451C70Aa069f19dB997'
 
 describe('TwoWayBatcher', () => {
   let proto: InstanceVars
@@ -14,12 +19,24 @@ describe('TwoWayBatcher', () => {
   beforeEach(async () => {
     proto = await deployProtocol()
 
-    batcher = await new TwoWayBatcher__factory(proto.deployer).deploy(
+    // Deploy the batcher to get the correct bytecode
+    const deployedBatcher = await new TwoWayBatcher__factory(proto.deployer).deploy(
       proto.reserve.address,
       proto.dsu.address,
       proto.usdc.address,
     )
-    await batcher.updatePendingOwner(proto.timelock.address)
+    // Copy the bytecode into the hardcoded address
+    await ethers.provider.send('hardhat_setCode', [
+      HARDCODED_RESERVE_BORROWER_ADDRESS,
+      await ethers.provider.getCode(deployedBatcher.address),
+    ])
+    // Attach the new batcher at the hardcoded address
+    batcher = await new TwoWayBatcher__factory(proto.deployer).attach(HARDCODED_RESERVE_BORROWER_ADDRESS)
+    // The `owner` is set to the 0 address because it wasn't initialized properly, impersonate the 0 address to transfer
+    const ZERO_ADDRESS = await impersonateWithBalance(constants.AddressZero, utils.parseEther('10'))
+    await batcher.connect(ZERO_ADDRESS).updatePendingOwner(proto.deployer.address)
+    await batcher.connect(proto.deployer).acceptOwner()
+
     reserveImpersonator = await impersonate.impersonateWithBalance(proto.reserve.address, utils.parseEther('10'))
   })
 
@@ -38,10 +55,6 @@ describe('TwoWayBatcher', () => {
   })
 
   context('funded', async () => {
-    beforeEach(async () => {
-      await proto.dsu.connect(proto.user).transfer(batcher.address, utils.parseEther('1000000'))
-    })
-
     describe('#wrap', async () => {
       beforeEach(async () => {
         await proto.usdc.connect(proto.user).approve(batcher.address, 1_000_000_000_000)
@@ -252,16 +265,10 @@ describe('TwoWayBatcher', () => {
       })
 
       it('loans token rounding', async () => {
-        const { user, usdc } = proto
+        const { user } = proto
         await expect(batcher.connect(user).loanUSDC(utils.parseEther('100').add(1)))
-          .to.emit(batcher, 'USDCLoaned')
-          .withArgs(user.address, utils.parseEther('100').add(1))
-
-        expect(await usdc.balanceOf(batcher.address)).to.equal(100_000_001)
-        expect(await usdc.balanceOf(user.address)).to.equal(1_000_000_000_000 - 100_000_001)
-
-        expect(await batcher.usdcLoansOutstanding()).to.equal(utils.parseEther('100').add(1))
-        expect(await batcher.depositorToUSDCLoanAmount(user.address)).to.equal(utils.parseEther('100').add(1))
+          .to.be.revertedWithCustomError(batcher, 'TwoWayBatcherInvalidUSDCAmount')
+          .withArgs(utils.parseEther('100').add(1))
       })
 
       it('loans token multiple', async () => {
@@ -305,33 +312,19 @@ describe('TwoWayBatcher', () => {
       })
 
       it('repays token rounding', async () => {
-        const { usdc, user } = proto
-        await batcher.connect(user).loanUSDC(1)
+        const { user } = proto
 
         await expect(batcher.connect(user).repayUSDC(utils.parseEther('100').add(1)))
-          .to.emit(batcher, 'USDCRepaid')
-          .withArgs(user.address, utils.parseEther('100').add(1))
-
-        expect(await batcher.usdcLoansOutstanding()).to.equal(0)
-        expect(await batcher.depositorToUSDCLoanAmount(user.address)).to.equal(0)
-
-        expect(await usdc.balanceOf(batcher.address)).to.equal(1)
-        expect(await usdc.balanceOf(user.address)).to.equal(999_999_999_999) // User lost 1e-6 USDC due to rounding
+          .to.be.revertedWithCustomError(batcher, 'TwoWayBatcherInvalidUSDCAmount')
+          .withArgs(utils.parseEther('100').add(1))
       })
 
       it('repays token partial rounding', async () => {
-        const { usdc, user } = proto
-        await batcher.connect(user).loanUSDC(1)
+        const { user } = proto
 
         await expect(batcher.connect(user).repayUSDC(utils.parseEther('50').add(1)))
-          .to.emit(batcher, 'USDCRepaid')
-          .withArgs(user.address, utils.parseEther('50').add(1))
-
-        expect(await batcher.usdcLoansOutstanding()).to.equal(utils.parseEther('50'))
-        expect(await batcher.depositorToUSDCLoanAmount(user.address)).to.equal(utils.parseEther('50'))
-
-        expect(await usdc.balanceOf(batcher.address)).to.equal(50_000_001)
-        expect(await usdc.balanceOf(user.address)).to.equal(999_949_999_999) // User lost 1e-6 USDC due to rounding
+          .to.be.revertedWithCustomError(batcher, 'TwoWayBatcherInvalidUSDCAmount')
+          .withArgs(utils.parseEther('50').add(1))
       })
 
       it('repays token multiple users', async () => {
@@ -371,7 +364,8 @@ describe('TwoWayBatcher', () => {
           await expect(batcher.connect(user).repayUSDC(utils.parseEther('100')))
             .to.emit(batcher, 'USDCRepaid')
             .withArgs(user.address, utils.parseEther('100'))
-            .to.emit(batcher, 'Rebalance') // TODO(arjun): assert args
+            .to.emit(batcher, 'Rebalance')
+            .withArgs(0, utils.parseEther('100'))
 
           expect(await batcher.usdcLoansOutstanding()).to.equal(0)
           expect(await batcher.depositorToUSDCLoanAmount(user.address)).to.equal(0)
@@ -386,7 +380,8 @@ describe('TwoWayBatcher', () => {
           await expect(batcher.connect(user).repayUSDC(utils.parseEther('51')))
             .to.emit(batcher, 'USDCRepaid')
             .withArgs(user.address, utils.parseEther('51'))
-            .to.emit(batcher, 'Rebalance') // TODO(arjun): assert args
+            .to.emit(batcher, 'Rebalance')
+            .withArgs(0, utils.parseEther('100'))
 
           expect(await batcher.usdcLoansOutstanding()).to.equal(utils.parseEther('49'))
           expect(await batcher.depositorToUSDCLoanAmount(user.address)).to.equal(utils.parseEther('49'))
@@ -461,7 +456,7 @@ describe('TwoWayBatcher', () => {
 
         await expect(batcher.connect(user).rebalance())
           .to.emit(batcher, 'Rebalance')
-          .withArgs(utils.parseEther('110'), 0) // TODO(arjun): fix event args
+          .withArgs(utils.parseEther('100'), 0)
           .to.emit(reserve, 'Mint')
           .withArgs(batcher.address, utils.parseEther('100'), 100_000_000)
 
@@ -483,7 +478,7 @@ describe('TwoWayBatcher', () => {
 
         await expect(batcher.connect(user).rebalance())
           .to.emit(batcher, 'Rebalance')
-          .withArgs(utils.parseEther('110'), 0) // TODO(arjun): fix event args
+          .withArgs(0, utils.parseEther('10'))
           .to.emit(reserve, 'Redeem')
           .withArgs(batcher.address, utils.parseEther('10'), 10_000_000)
 
@@ -491,6 +486,123 @@ describe('TwoWayBatcher', () => {
         expect(await usdc.balanceOf(batcher.address)).to.equal(10_000_000)
 
         expect(await batcher.totalBalance()).to.equal(utils.parseEther('1000010'))
+      })
+    })
+
+    describe('#close', async () => {
+      beforeEach(async () => {
+        await proto.usdc.connect(proto.user).approve(batcher.address, utils.parseEther('1000000'))
+        await proto.usdc.connect(proto.user2).approve(batcher.address, utils.parseEther('1000000'))
+      })
+
+      it('closes', async () => {
+        const { reserve, deployer, user } = proto
+        await batcher.connect(user).wrap(utils.parseEther('1000'), user.address)
+
+        await expect(batcher.connect(deployer).close())
+          .to.emit(batcher, 'Close')
+          .withArgs(utils.parseEther('1000000'))
+          .to.emit(reserve, 'Mint')
+          .withArgs(batcher.address, utils.parseEther('1000'), 1_000_000_000)
+          .to.emit(reserve, 'Repay')
+          .withArgs(batcher.address, utils.parseEther('1000000'))
+
+        expect(await reserve.debt(batcher.address)).to.equal(0)
+      })
+
+      it('closes empty', async () => {
+        const { reserve, deployer } = proto
+        await expect(batcher.connect(deployer).close()).to.emit(batcher, 'Close').withArgs(utils.parseEther('1000000'))
+
+        expect(await reserve.debt(batcher.address)).to.equal(0)
+      })
+
+      it('closes rounding', async () => {
+        const { usdc, reserve, deployer, user } = proto
+        await batcher.connect(user).wrap(utils.parseEther('1000').add(1), user.address)
+
+        // When wrapping 1000 + 1e-18, the user is debited 1000 + 1e-6 USDC due to rounding
+        // The batcher therefore has a USDC balance of 1000 + 1e-6 which represents an excess of
+        // 1e-6 - 1e-18 = 1e-12. When that amount is minted with the Reserve during close, it will take 1e-6 USDC from
+        // the Batcher due to rounding, resulting in a total DSU balance of 1_000_000 + 1e12 - 1
+        await expect(batcher.connect(deployer).close())
+          .to.emit(reserve, 'Mint')
+          .withArgs(batcher.address, utils.parseEther('1000').add(1e12), 1_000_000_001)
+          .to.emit(reserve, 'Repay')
+          .withArgs(batcher.address, utils.parseEther('1000000'))
+          .to.emit(reserve, 'Redeem') // Redeem the excess amount (due to rounding this is 0)
+          .withArgs(batcher.address, 1e12 - 1, 0)
+          .to.emit(usdc, 'Transfer') // Transfer the 'excess' USDC amount
+          .withArgs(batcher.address, deployer.address, 0)
+          .to.emit(batcher, 'Close')
+          .withArgs(utils.parseEther('1000000').add(1e12 - 1))
+
+        expect(await reserve.debt(batcher.address)).to.equal(0)
+      })
+
+      it('closes DSU excess', async () => {
+        const { usdc, dsu, reserve, deployer, user } = proto
+        await batcher.connect(user).wrap(utils.parseEther('1000'), user.address)
+        await dsu.connect(user).transfer(batcher.address, utils.parseEther('10')) // Give the batcher excess DSU
+
+        await expect(batcher.connect(deployer).close())
+          .to.emit(reserve, 'Repay')
+          .withArgs(batcher.address, utils.parseEther('1000000'))
+          .to.emit(reserve, 'Redeem') // Redeem the excess amount
+          .withArgs(batcher.address, utils.parseEther('10'), 10_000_000)
+          .to.emit(usdc, 'Transfer') // Transfer the 'excess' USDC amount
+          .withArgs(batcher.address, deployer.address, 10_000_000)
+          .to.emit(batcher, 'Close')
+          .withArgs(utils.parseEther('1000010'))
+
+        expect(await reserve.debt(batcher.address)).to.equal(0)
+      })
+
+      it('closes outstanding loans, excess usdc', async () => {
+        const { reserve, deployer, user, user2 } = proto
+
+        await batcher.connect(user).loanUSDC(utils.parseEther('10'))
+        await batcher.connect(user2).wrap(utils.parseEther('20'), user2.address)
+
+        await expect(batcher.connect(deployer).close())
+          .to.emit(reserve, 'Mint')
+          .withArgs(batcher.address, utils.parseEther('20'), 20_000_000)
+          .to.emit(reserve, 'Repay')
+          .withArgs(batcher.address, utils.parseEther('1000000'))
+          .to.emit(batcher, 'Close')
+          .withArgs(utils.parseEther('1000000'))
+
+        expect(await reserve.debt(batcher.address)).to.equal(0)
+      })
+
+      it('closes outstanding loans, lack of usdc', async () => {
+        const { reserve, usdc, dsu, deployer, user, user2 } = proto
+
+        // Loan USDC
+        await batcher.connect(user).loanUSDC(utils.parseEther('10'))
+
+        // User2 mints directly and unwraps via Batcher
+        await usdc.connect(user2).approve(reserve.address, 5_000_000)
+        await reserve.connect(user2).mint(utils.parseEther('5'))
+        await dsu.connect(user2).approve(batcher.address, utils.parseEther('5'))
+        await batcher.connect(user2).unwrap(utils.parseEther('5'), user2.address)
+
+        await expect(batcher.connect(deployer).close())
+          .to.emit(reserve, 'Redeem')
+          .withArgs(batcher.address, utils.parseEther('5'), 5_000_000)
+          .to.emit(reserve, 'Repay')
+          .withArgs(batcher.address, utils.parseEther('1000000'))
+          .to.emit(batcher, 'Close')
+          .withArgs(utils.parseEther('1000000'))
+
+        expect(await reserve.debt(batcher.address)).to.equal(0)
+        expect(await usdc.balanceOf(batcher.address)).to.equal(10_000_000)
+      })
+
+      it('closes not owner', async () => {
+        await expect(batcher.connect(proto.user).close())
+          .to.be.revertedWithCustomError(batcher, 'UOwnableNotOwnerError')
+          .withArgs(proto.user.address)
       })
     })
   })

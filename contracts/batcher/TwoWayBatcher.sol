@@ -1,6 +1,7 @@
 //SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.13;
 
+import "hardhat/console.sol";
 import "@equilibria/root/number/types/UFixed18.sol";
 import "@equilibria/root/token/types/Token18.sol";
 import "@equilibria/root/token/types/Token6.sol";
@@ -15,6 +16,8 @@ contract TwoWayBatcher is UReentrancyGuard, Batcher {
     event USDCLoaned(address indexed depositor, UFixed18 amount);
     event USDCRepaid(address indexed depositor, UFixed18 amount);
 
+    error TwoWayBatcherInvalidUSDCAmount(UFixed18 amount);
+
     UFixed18 public usdcLoansOutstanding;
     mapping(address => UFixed18) public depositorToUSDCLoanAmount;
 
@@ -23,6 +26,9 @@ contract TwoWayBatcher is UReentrancyGuard, Batcher {
     { }
 
     function loanUSDC(UFixed18 amount) external nonReentrant {
+        rebalance();
+
+        if (!amount.eq(_toToken6Amount(amount))) revert TwoWayBatcherInvalidUSDCAmount(amount);
         USDC.pull(msg.sender, amount, true);
 
         usdcLoansOutstanding = usdcLoansOutstanding.add(amount);
@@ -32,10 +38,9 @@ contract TwoWayBatcher is UReentrancyGuard, Batcher {
     }
 
     function repayUSDC(UFixed18 amount) external nonReentrant {
-        if (USDC.balanceOf().lt(amount)) {
-            rebalance();
-        }
+        rebalance();
 
+        if (!amount.eq(_toToken6Amount(amount))) revert TwoWayBatcherInvalidUSDCAmount(amount);
         usdcLoansOutstanding = usdcLoansOutstanding.sub(amount);
         depositorToUSDCLoanAmount[msg.sender] = depositorToUSDCLoanAmount[msg.sender].sub(amount);
 
@@ -72,5 +77,9 @@ contract TwoWayBatcher is UReentrancyGuard, Batcher {
         } else {
             rebalance();
         }
+    }
+
+    function _toToken6Amount(UFixed18 amount) internal pure returns (UFixed18 token6Amount) {
+        token6Amount = UFixed18.wrap(Math.ceilDiv(UFixed18.unwrap(amount), 1e12) * 1e12);
     }
 }

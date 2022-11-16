@@ -117,8 +117,9 @@ describe('WrapOnlyBatcher', () => {
 
   describe('#unwrap', async () => {
     it('reverts', async () => {
-      await expect(batcher.connect(user).unwrap(utils.parseEther('100'), to.address)).to.be.revertedWith(
-        'BatcherNotImplementedError()',
+      await expect(batcher.connect(user).unwrap(utils.parseEther('100'), to.address)).to.be.revertedWithCustomError(
+        batcher,
+        'BatcherNotImplementedError',
       )
     })
   })
@@ -202,14 +203,16 @@ describe('WrapOnlyBatcher', () => {
 
       // repay debt and last of balance
       reserve.repay.whenCalledWith(batcher.address, utils.parseEther('200')).returns()
-      dsu.transfer.whenCalledWith(reserve.address, utils.parseEther('200')).returns(true)
-      dsu.transfer.whenCalledWith(reserve.address, 1).returns(true)
+      reserve.mint.whenCalledWith(1).returns()
+      usdc.transfer.whenCalledWith(owner.address, 0).returns(true)
 
       await expect(batcher.connect(owner).close()).to.emit(batcher, 'Close').withArgs(utils.parseEther('200').add(1))
     })
 
     it('closes not owner', async () => {
-      await expect(batcher.connect(user).close()).to.be.revertedWith(`UOwnableNotOwnerError("${user.address}")`)
+      await expect(batcher.connect(user).close())
+        .to.be.revertedWithCustomError(batcher, 'UOwnableNotOwnerError')
+        .withArgs(user.address)
     })
   })
 })

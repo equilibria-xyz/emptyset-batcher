@@ -39,7 +39,7 @@ describe('WrapOnlyBatcher', () => {
 
   context('funded', async () => {
     beforeEach(async () => {
-      await proto.dsu.connect(proto.user).transfer(batcher.address, utils.parseEther('1000000'))
+      await proto.dsu.connect(proto.usdcHolder).transfer(batcher.address, utils.parseEther('1000000'))
     })
 
     describe('#wrap', async () => {
@@ -142,7 +142,7 @@ describe('WrapOnlyBatcher', () => {
       it('reverts', async () => {
         await expect(
           batcher.connect(proto.user).unwrap(utils.parseEther('100'), proto.timelock.address),
-        ).to.be.revertedWith('BatcherNotImplementedError()')
+        ).to.be.revertedWithCustomError(batcher, 'BatcherNotImplementedError')
       })
     })
 

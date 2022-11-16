@@ -79,7 +79,12 @@ abstract contract Batcher is IBatcher, UOwnable {
         UFixed18 returnAmount = dsuBalance.sub(repayAmount);
 
         RESERVE.repay(address(this), repayAmount);
-        if (!returnAmount.isZero()) DSU.push(address(RESERVE), returnAmount);
+
+        // If there is any excess DSU, redeem it for USDC and send to the owner
+        if (!returnAmount.isZero()) {
+            RESERVE.redeem(returnAmount);
+            USDC.push(owner(), returnAmount);
+        }
 
         emit Close(dsuBalance);
     }
