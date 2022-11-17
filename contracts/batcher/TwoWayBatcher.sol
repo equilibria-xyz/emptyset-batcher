@@ -5,19 +5,18 @@ import "@equilibria/root/number/types/UFixed18.sol";
 import "@equilibria/root/token/types/Token18.sol";
 import "@equilibria/root/token/types/Token6.sol";
 import "@equilibria/root/control/unstructured/UReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./Batcher.sol";
 
-contract TwoWayBatcher is UReentrancyGuard, Batcher {
+contract TwoWayBatcher is UReentrancyGuard, Batcher, ERC20 {
     event Deposit(address indexed account, UFixed18 amount);
     event Withdraw(address indexed account, UFixed18 amount);
 
     error TwoWayBatcherInvalidTokenAmount(UFixed18 amount);
 
-    UFixed18 public totalDeposits;
-    mapping(address => UFixed18) public deposits;
-
     constructor(IEmptySetReserve reserve, Token18 dsu, Token6 usdc)
     Batcher(reserve, dsu, usdc)
+    ERC20("Batcher Deposit", "BDEP")
     { }
 
     function deposit(UFixed18 amount) external nonReentrant {
@@ -27,8 +26,7 @@ contract TwoWayBatcher is UReentrancyGuard, Batcher {
 
         USDC.pull(msg.sender, amount, true);
 
-        totalDeposits = totalDeposits.add(amount);
-        deposits[msg.sender] = deposits[msg.sender].add(amount);
+        _mint(msg.sender, UFixed18.unwrap(amount));
 
         emit Deposit(msg.sender, amount);
     }
@@ -38,8 +36,7 @@ contract TwoWayBatcher is UReentrancyGuard, Batcher {
 
         rebalance();
 
-        totalDeposits = totalDeposits.sub(amount);
-        deposits[msg.sender] = deposits[msg.sender].sub(amount);
+        _burn(msg.sender, UFixed18.unwrap(amount));
 
         USDC.push(msg.sender, amount);
 
@@ -47,16 +44,17 @@ contract TwoWayBatcher is UReentrancyGuard, Batcher {
     }
 
     function _rebalance(UFixed18 usdcBalance, UFixed18) override internal {
-        uint256 balanceToTarget = usdcBalance.compare(totalDeposits);
+        UFixed18 totalSupply = UFixed18.wrap(totalSupply());
+        uint256 balanceToTarget = usdcBalance.compare(totalSupply);
 
         // totalUSDCLoans == usdcBalance: Do nothing
         if (balanceToTarget == 1) return;
 
         // usdcBalance > totalUSDCLoans: deposit excess USDC
-        if (balanceToTarget == 2) return RESERVE.mint(usdcBalance.sub(totalDeposits));
+        if (balanceToTarget == 2) return RESERVE.mint(usdcBalance.sub(totalSupply));
 
         // usdcBalance < totalUSDCLoans: pull out more USDC so we have enough to repay loans
-        if (balanceToTarget == 0) return RESERVE.redeem(totalDeposits.sub(usdcBalance));
+        if (balanceToTarget == 0) return RESERVE.redeem(totalSupply.sub(usdcBalance));
     }
 
     function _close() override internal {

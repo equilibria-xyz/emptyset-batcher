@@ -260,8 +260,8 @@ describe('TwoWayBatcher', () => {
         expect(await usdc.balanceOf(batcher.address)).to.equal(100_000_000)
         expect(await usdc.balanceOf(user.address)).to.equal(1_000_000_000_000 - 100_000_000)
 
-        expect(await batcher.totalDeposits()).to.equal(utils.parseEther('100'))
-        expect(await batcher.deposits(user.address)).to.equal(utils.parseEther('100'))
+        expect(await batcher.totalSupply()).to.equal(utils.parseEther('100'))
+        expect(await batcher.balanceOf(user.address)).to.equal(utils.parseEther('100'))
       })
 
       it('loans token rounding', async () => {
@@ -284,9 +284,9 @@ describe('TwoWayBatcher', () => {
         expect(await usdc.balanceOf(user.address)).to.equal(1_000_000_000_000 - 100_000_000)
         expect(await usdc.balanceOf(user2.address)).to.equal(1_000_000_000_000 - 200_000_000)
 
-        expect(await batcher.totalDeposits()).to.equal(utils.parseEther('300'))
-        expect(await batcher.deposits(user.address)).to.equal(utils.parseEther('100'))
-        expect(await batcher.deposits(user2.address)).to.equal(utils.parseEther('200'))
+        expect(await batcher.totalSupply()).to.equal(utils.parseEther('300'))
+        expect(await batcher.balanceOf(user.address)).to.equal(utils.parseEther('100'))
+        expect(await batcher.balanceOf(user2.address)).to.equal(utils.parseEther('200'))
       })
     })
 
@@ -304,8 +304,8 @@ describe('TwoWayBatcher', () => {
           .to.emit(batcher, 'Withdraw')
           .withArgs(user.address, utils.parseEther('100'))
 
-        expect(await batcher.totalDeposits()).to.equal(0)
-        expect(await batcher.deposits(user.address)).to.equal(0)
+        expect(await batcher.totalSupply()).to.equal(0)
+        expect(await batcher.balanceOf(user.address)).to.equal(0)
 
         expect(await usdc.balanceOf(batcher.address)).to.equal(0)
         expect(await usdc.balanceOf(user.address)).to.equal(1_000_000_000_000)
@@ -339,9 +339,9 @@ describe('TwoWayBatcher', () => {
           .to.emit(batcher, 'Withdraw')
           .withArgs(user2.address, utils.parseEther('101'))
 
-        expect(await batcher.totalDeposits()).to.equal(utils.parseEther('99'))
-        expect(await batcher.deposits(user.address)).to.equal(0)
-        expect(await batcher.deposits(user2.address)).to.equal(utils.parseEther('99'))
+        expect(await batcher.totalSupply()).to.equal(utils.parseEther('99'))
+        expect(await batcher.balanceOf(user.address)).to.equal(0)
+        expect(await batcher.balanceOf(user2.address)).to.equal(utils.parseEther('99'))
 
         expect(await usdc.balanceOf(batcher.address)).to.equal(99_000_000)
         expect(await usdc.balanceOf(user.address)).to.equal(1_000_000_000_000)
@@ -367,8 +367,8 @@ describe('TwoWayBatcher', () => {
             .to.emit(batcher, 'Rebalance')
             .withArgs(0, utils.parseEther('100'))
 
-          expect(await batcher.totalDeposits()).to.equal(0)
-          expect(await batcher.deposits(user.address)).to.equal(0)
+          expect(await batcher.totalSupply()).to.equal(0)
+          expect(await batcher.balanceOf(user.address)).to.equal(0)
 
           expect(await usdc.balanceOf(batcher.address)).to.equal(0)
           expect(await usdc.balanceOf(user.address)).to.equal(1_000_000_000_000)
@@ -383,8 +383,8 @@ describe('TwoWayBatcher', () => {
             .to.emit(batcher, 'Rebalance')
             .withArgs(0, utils.parseEther('100'))
 
-          expect(await batcher.totalDeposits()).to.equal(utils.parseEther('49'))
-          expect(await batcher.deposits(user.address)).to.equal(utils.parseEther('49'))
+          expect(await batcher.totalSupply()).to.equal(utils.parseEther('49'))
+          expect(await batcher.balanceOf(user.address)).to.equal(utils.parseEther('49'))
 
           expect(await usdc.balanceOf(batcher.address)).to.equal(49_000_000)
           expect(await usdc.balanceOf(user.address)).to.equal(999_951_000_000)

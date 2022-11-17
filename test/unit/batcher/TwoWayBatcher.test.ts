@@ -105,8 +105,8 @@ describe('TwoWayBatcher', () => {
         .withArgs(usdcLoaner.address, utils.parseEther('100'))
         .to.emit(batcher, 'Rebalance')
 
-      expect(await batcher.totalDeposits()).to.equal(utils.parseEther('100'))
-      expect(await batcher.deposits(usdcLoaner.address)).to.equal(utils.parseEther('100'))
+      expect(await batcher.totalSupply()).to.equal(utils.parseEther('100'))
+      expect(await batcher.balanceOf(usdcLoaner.address)).to.equal(utils.parseEther('100'))
     })
 
     it('loans token rounding', async () => {
@@ -126,9 +126,9 @@ describe('TwoWayBatcher', () => {
         .to.emit(batcher, 'Deposit')
         .withArgs(usdcLoaner2.address, utils.parseEther('200'))
 
-      expect(await batcher.totalDeposits()).to.equal(utils.parseEther('300'))
-      expect(await batcher.deposits(usdcLoaner.address)).to.equal(utils.parseEther('100'))
-      expect(await batcher.deposits(usdcLoaner2.address)).to.equal(utils.parseEther('200'))
+      expect(await batcher.totalSupply()).to.equal(utils.parseEther('300'))
+      expect(await batcher.balanceOf(usdcLoaner.address)).to.equal(utils.parseEther('100'))
+      expect(await batcher.balanceOf(usdcLoaner2.address)).to.equal(utils.parseEther('200'))
     })
   })
 
@@ -146,8 +146,8 @@ describe('TwoWayBatcher', () => {
         .withArgs(usdcLoaner.address, utils.parseEther('100'))
         .to.emit(batcher, 'Rebalance')
 
-      expect(await batcher.totalDeposits()).to.equal(0)
-      expect(await batcher.deposits(usdcLoaner.address)).to.equal(0)
+      expect(await batcher.totalSupply()).to.equal(0)
+      expect(await batcher.balanceOf(usdcLoaner.address)).to.equal(0)
     })
 
     it('repays token rounding', async () => {
@@ -178,9 +178,9 @@ describe('TwoWayBatcher', () => {
         .to.emit(batcher, 'Withdraw')
         .withArgs(usdcLoaner2.address, utils.parseEther('101'))
 
-      expect(await batcher.totalDeposits()).to.equal(utils.parseEther('99'))
-      expect(await batcher.deposits(usdcLoaner.address)).to.equal(0)
-      expect(await batcher.deposits(usdcLoaner2.address)).to.equal(utils.parseEther('99'))
+      expect(await batcher.totalSupply()).to.equal(utils.parseEther('99'))
+      expect(await batcher.balanceOf(usdcLoaner.address)).to.equal(0)
+      expect(await batcher.balanceOf(usdcLoaner2.address)).to.equal(utils.parseEther('99'))
     })
 
     it('repays token rebalance required', async () => {
@@ -198,8 +198,8 @@ describe('TwoWayBatcher', () => {
         .to.emit(batcher, 'Withdraw')
         .withArgs(usdcLoaner.address, utils.parseEther('100'))
 
-      expect(await batcher.totalDeposits()).to.equal(0)
-      expect(await batcher.deposits(usdcLoaner.address)).to.equal(0)
+      expect(await batcher.totalSupply()).to.equal(0)
+      expect(await batcher.balanceOf(usdcLoaner.address)).to.equal(0)
     })
 
     it('reverts on excess repayment', async () => {
