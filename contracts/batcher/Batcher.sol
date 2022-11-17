@@ -9,14 +9,22 @@ import "../interfaces/IBatcher.sol";
 import "../interfaces/IEmptySetReserve.sol";
 
 abstract contract Batcher is IBatcher, UOwnable {
-    using UFixed18Lib for UFixed18;
-    using Token18Lib for Token18;
-    using Token6Lib for Token6;
-
+    /// @dev Reserve address
     IEmptySetReserve public immutable RESERVE; // solhint-disable-line var-name-mixedcase
+
+    /// @dev DSU address
     Token18 public immutable DSU; // solhint-disable-line var-name-mixedcase
+
+    /// @dev USDC address
     Token6 public immutable USDC; // solhint-disable-line var-name-mixedcase
 
+    /**
+     * @notice Initializes the Batcher
+     * @dev Called at implementation instantiate and constant for that implementation.
+     * @param reserve EmptySet Reserve Aaddress
+     * @param dsu DSU Token address
+     * @param usdc USDC Token Address
+     */
     constructor(IEmptySetReserve reserve, Token18 dsu, Token6 usdc) {
         RESERVE = reserve;
         DSU = dsu;
@@ -28,30 +36,60 @@ abstract contract Batcher is IBatcher, UOwnable {
         __UOwnable__initialize();
     }
 
+    /**
+     * @notice Total USDC and DSU balance of the Batcher
+     * @return Balance of DSU + balance of USDC
+     */
     function totalBalance() public view returns (UFixed18) {
         return DSU.balanceOf().add(USDC.balanceOf());
     }
 
+    /**
+     * @notice Wraps `amount` of USDC, returned DSU to `to`
+     * @param amount Amount of USDC to wrap
+     * @param to Receiving address of resulting DSU
+     */
     function wrap(UFixed18 amount, address to) external {
         _wrap(amount, to);
         emit Wrap(to, amount);
     }
 
+    /**
+     * @notice Pulls USDC from the `msg.sender` and pushes DSU to `to`
+     * @dev Rounds USDC amount up if `amount` exceeds USDC decimal precision. Overrideable by implementation
+     * @param amount Amount of USDC to pull
+     * @param to Receiving address of resulting DSU
+     */
     function _wrap(UFixed18 amount, address to) virtual internal {
         USDC.pull(msg.sender, amount, true);
         DSU.push(to, amount);
     }
 
+    /**
+     * @notice Unwraps `amount` of DSU, returned USDC to `to`
+     * @param amount Amount of DSU to unwrap
+     * @param to Receiving address of resulting USDC
+     */
     function unwrap(UFixed18 amount, address to) external {
         _unwrap(amount, to);
         emit Unwrap(to, amount);
     }
 
+    /**
+     * @notice Pulls DSU from the `msg.sender` and pushes USDC to `to`
+     * @dev Rounds USDC amount down if `amount` exceeds USDC decimal precision. Overrideable by implementation
+     * @param amount Amount of DSU to pull
+     * @param to Receiving address of resulting USDC
+     */
     function _unwrap(UFixed18 amount, address to) virtual internal {
         DSU.pull(msg.sender, amount);
         USDC.push(to, amount);
     }
 
+    /**
+     * @notice Rebalances the USDC and DSU in the Batcher to maintain target balances
+     * @dev Reverts if the new total balance is less than before
+     */
     function rebalance() public {
         (UFixed18 usdcBalance, UFixed18 dsuBalance) = (USDC.balanceOf(), DSU.balanceOf());
 
@@ -67,8 +105,12 @@ abstract contract Batcher is IBatcher, UOwnable {
         );
     }
 
+    /// @dev Hook for implementation for custom rebalance logic
     function _rebalance(UFixed18 usdcBalance, UFixed18 dsuBalance) virtual internal;
 
+    /**
+     * @notice Closes the Batcher. Repaying debt to Reserve and returning excess USDC to owner.
+     */
     function close() external onlyOwner {
         _close();
 
@@ -87,5 +129,6 @@ abstract contract Batcher is IBatcher, UOwnable {
         emit Close(dsuBalance);
     }
 
+    /// @dev Hook for implementation for custom close logic
     function _close() virtual internal;
 }

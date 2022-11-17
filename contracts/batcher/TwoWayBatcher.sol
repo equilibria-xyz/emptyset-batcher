@@ -9,16 +9,31 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./Batcher.sol";
 
 contract TwoWayBatcher is UReentrancyGuard, Batcher, ERC20 {
+    /// @dev Event emitted on USDC deposit
     event Deposit(address indexed account, UFixed18 amount);
+    /// @dev Event emitted on USDC withdraw
     event Withdraw(address indexed account, UFixed18 amount);
 
+    /// @dev Error thrown on invalid USDC amount
     error TwoWayBatcherInvalidTokenAmount(UFixed18 amount);
 
+    /**
+     * @notice Initializes the TwoWayBatcher
+     * @dev Called at implementation instantiate and constant for that implementation.
+     * @param reserve EmptySet Reserve Aaddress
+     * @param dsu DSU Token address
+     * @param usdc USDC Token Address
+     */
     constructor(IEmptySetReserve reserve, Token18 dsu, Token6 usdc)
     Batcher(reserve, dsu, usdc)
     ERC20("Batcher Deposit", "BDEP")
     { } // solhint-disable-line no-empty-blocks
 
+    /**
+     * @notice Deposits USDC for Batcher to use in unwrapping flows
+     * @dev Reverts if `amount` has greater precision than 6 decimals
+     * @param amount Amount of USDC to deposit
+     */
     function deposit(UFixed18 amount) external nonReentrant {
         if (!_validToken6Amount(amount)) revert TwoWayBatcherInvalidTokenAmount(amount);
 
@@ -31,6 +46,11 @@ contract TwoWayBatcher is UReentrancyGuard, Batcher, ERC20 {
         emit Deposit(msg.sender, amount);
     }
 
+    /**
+     * @notice Withdraws USDC from Batcher
+     * @dev Reverts if `amount` has greater precision than 6 decimals
+     * @param amount Amount of USDC to withdraw
+     */
     function withdraw(UFixed18 amount) external nonReentrant {
         if (!_validToken6Amount(amount)) revert TwoWayBatcherInvalidTokenAmount(amount);
 
@@ -43,6 +63,11 @@ contract TwoWayBatcher is UReentrancyGuard, Batcher, ERC20 {
         emit Withdraw(msg.sender, amount);
     }
 
+    /**
+     * @notice Rebalances the Batcher to maintain a target balance of USDC and DSU
+     * @dev Maintains a USDC balance of outstanding deposits. Excess USDC is minted as DSU
+     * @param usdcBalance Current Batcher USDC balance
+     */
     function _rebalance(UFixed18 usdcBalance, UFixed18) override internal {
         UFixed18 totalSupply = UFixed18.wrap(totalSupply());
         uint256 balanceToTarget = usdcBalance.compare(totalSupply);
@@ -57,10 +82,17 @@ contract TwoWayBatcher is UReentrancyGuard, Batcher, ERC20 {
         if (balanceToTarget == 0) return RESERVE.redeem(totalSupply.sub(usdcBalance));
     }
 
+    /**
+     * @notice Performs actions required to close the Batcher
+     */
     function _close() override internal {
         rebalance();
     }
 
+    /**
+     * @notice Checks if the `amount` has a maximum precision of 6 decimals
+     * @return true if the `amount` has a precision of 6 or less, otherwise false
+     */
     function _validToken6Amount(UFixed18 amount) internal pure returns (bool) {
         return UFixed18.unwrap(amount) % 1e12 == 0;
     }
