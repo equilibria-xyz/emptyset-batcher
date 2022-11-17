@@ -17,7 +17,7 @@ contract TwoWayBatcher is UReentrancyGuard, Batcher, ERC20 {
     constructor(IEmptySetReserve reserve, Token18 dsu, Token6 usdc)
     Batcher(reserve, dsu, usdc)
     ERC20("Batcher Deposit", "BDEP")
-    { }
+    { } // solhint-disable-line no-empty-blocks
 
     function deposit(UFixed18 amount) external nonReentrant {
         if (!_validToken6Amount(amount)) revert TwoWayBatcherInvalidTokenAmount(amount);

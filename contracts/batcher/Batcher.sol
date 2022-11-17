@@ -13,9 +13,9 @@ abstract contract Batcher is IBatcher, UOwnable {
     using Token18Lib for Token18;
     using Token6Lib for Token6;
 
-    IEmptySetReserve public immutable RESERVE;
-    Token18 public immutable DSU;
-    Token6 public immutable USDC;
+    IEmptySetReserve public immutable RESERVE; // solhint-disable-line var-name-mixedcase
+    Token18 public immutable DSU; // solhint-disable-line var-name-mixedcase
+    Token6 public immutable USDC; // solhint-disable-line var-name-mixedcase
 
     constructor(IEmptySetReserve reserve, Token18 dsu, Token6 usdc) {
         RESERVE = reserve;

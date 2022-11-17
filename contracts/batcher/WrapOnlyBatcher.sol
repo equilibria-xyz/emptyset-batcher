@@ -9,7 +9,7 @@ import "./Batcher.sol";
 contract WrapOnlyBatcher is Batcher {
     constructor(IEmptySetReserve reserve, Token18 dsu, Token6 usdc)
     Batcher(reserve, dsu, usdc)
-    { }
+    { } // solhint-disable-line no-empty-blocks
 
     function _unwrap(UFixed18, address) override internal {
         revert BatcherNotImplementedError();

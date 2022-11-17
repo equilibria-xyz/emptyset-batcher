@@ -15,9 +15,9 @@ interface IBatcher {
     error BatcherNotImplementedError();
     error BatcherBalanceMismatchError(UFixed18 oldBalance, UFixed18 newBalance);
 
-    function RESERVE() external view returns (IEmptySetReserve);
-    function USDC() external view returns (Token6);
-    function DSU() external view returns (Token18);
+    function RESERVE() external view returns (IEmptySetReserve); // solhint-disable-line func-name-mixedcase
+    function USDC() external view returns (Token6); // solhint-disable-line func-name-mixedcase
+    function DSU() external view returns (Token18); // solhint-disable-line func-name-mixedcase
     function totalBalance() external view returns (UFixed18);
     function wrap(UFixed18 amount, address to) external;
     function unwrap(UFixed18 amount, address to) external;
