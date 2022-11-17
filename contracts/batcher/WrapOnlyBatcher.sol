@@ -7,26 +7,21 @@ import "@equilibria/root/token/types/Token6.sol";
 import "./Batcher.sol";
 
 contract WrapOnlyBatcher is Batcher {
-    using UFixed18Lib for UFixed18;
-    using Token18Lib for Token18;
-    using Token6Lib for Token6;
-
     constructor(IEmptySetReserve reserve, Token18 dsu, Token6 usdc)
     Batcher(reserve, dsu, usdc)
     { }
 
-    function _unwrap(UFixed18 amount, address to) override internal {
+    function _unwrap(UFixed18, address) override internal {
         revert BatcherNotImplementedError();
     }
 
-    function _rebalance(UFixed18 usdcBalance, UFixed18 dsuBalance) override internal {
+    function _rebalance(UFixed18 usdcBalance, UFixed18) override internal {
         if (usdcBalance.isZero()) return;
 
         RESERVE.mint(usdcBalance);
     }
 
-    function _close(UFixed18 usdcBalance) override internal {
-        // If we have excess usdc, rebalance it to mint DSU
-        if (!usdcBalance.isZero()) rebalance();
+    function _close() override internal {
+        rebalance();
     }
 }

@@ -1,7 +1,6 @@
 //SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.13;
 
-import "hardhat/console.sol";
 import "@equilibria/root/number/types/UFixed18.sol";
 import "@equilibria/root/token/types/Token18.sol";
 import "@equilibria/root/token/types/Token6.sol";
@@ -9,77 +8,62 @@ import "@equilibria/root/control/unstructured/UReentrancyGuard.sol";
 import "./Batcher.sol";
 
 contract TwoWayBatcher is UReentrancyGuard, Batcher {
-    using UFixed18Lib for UFixed18;
-    using Token18Lib for Token18;
-    using Token6Lib for Token6;
+    event Deposit(address indexed account, UFixed18 amount);
+    event Withdraw(address indexed account, UFixed18 amount);
 
-    event USDCLoaned(address indexed depositor, UFixed18 amount);
-    event USDCRepaid(address indexed depositor, UFixed18 amount);
+    error TwoWayBatcherInvalidTokenAmount(UFixed18 amount);
 
-    error TwoWayBatcherInvalidUSDCAmount(UFixed18 amount);
-
-    UFixed18 public usdcLoansOutstanding;
-    mapping(address => UFixed18) public depositorToUSDCLoanAmount;
+    UFixed18 public totalDeposits;
+    mapping(address => UFixed18) public deposits;
 
     constructor(IEmptySetReserve reserve, Token18 dsu, Token6 usdc)
     Batcher(reserve, dsu, usdc)
     { }
 
-    function loanUSDC(UFixed18 amount) external nonReentrant {
+    function deposit(UFixed18 amount) external nonReentrant {
+        if (!_validToken6Amount(amount)) revert TwoWayBatcherInvalidTokenAmount(amount);
+
         rebalance();
 
-        if (!amount.eq(_toToken6Amount(amount))) revert TwoWayBatcherInvalidUSDCAmount(amount);
         USDC.pull(msg.sender, amount, true);
 
-        usdcLoansOutstanding = usdcLoansOutstanding.add(amount);
-        depositorToUSDCLoanAmount[msg.sender] = depositorToUSDCLoanAmount[msg.sender].add(amount);
+        totalDeposits = totalDeposits.add(amount);
+        deposits[msg.sender] = deposits[msg.sender].add(amount);
 
-        emit USDCLoaned(msg.sender, amount);
+        emit Deposit(msg.sender, amount);
     }
 
-    function repayUSDC(UFixed18 amount) external nonReentrant {
+    function withdraw(UFixed18 amount) external nonReentrant {
+        if (!_validToken6Amount(amount)) revert TwoWayBatcherInvalidTokenAmount(amount);
+
         rebalance();
 
-        if (!amount.eq(_toToken6Amount(amount))) revert TwoWayBatcherInvalidUSDCAmount(amount);
-        usdcLoansOutstanding = usdcLoansOutstanding.sub(amount);
-        depositorToUSDCLoanAmount[msg.sender] = depositorToUSDCLoanAmount[msg.sender].sub(amount);
+        totalDeposits = totalDeposits.sub(amount);
+        deposits[msg.sender] = deposits[msg.sender].sub(amount);
 
         USDC.push(msg.sender, amount);
 
-        emit USDCRepaid(msg.sender, amount);
+        emit Withdraw(msg.sender, amount);
     }
 
     function _rebalance(UFixed18 usdcBalance, UFixed18) override internal {
-        uint256 cmpResult = usdcLoansOutstanding.compare(usdcBalance);
+        uint256 balanceToTarget = usdcBalance.compare(totalDeposits);
 
         // totalUSDCLoans == usdcBalance: Do nothing
-        if (cmpResult == 1) {
-            return;
+        if (balanceToTarget == 1) return;
 
-        // totalUSDCLoans > usdcBalance: pull out more USDC so we have enough to repay loans
-        } else if (cmpResult == 2) {
-            RESERVE.redeem(usdcLoansOutstanding.sub(usdcBalance));
+        // usdcBalance > totalUSDCLoans: deposit excess USDC
+        if (balanceToTarget == 2) return RESERVE.mint(usdcBalance.sub(totalDeposits));
 
-        // totalUSDCLoans < usdcBalance: deposit excess USDC
-        } else if (cmpResult == 0) {
-            RESERVE.mint(usdcBalance.sub(usdcLoansOutstanding));
-        }
+        // usdcBalance < totalUSDCLoans: pull out more USDC so we have enough to repay loans
+        if (balanceToTarget == 0) return RESERVE.redeem(totalDeposits.sub(usdcBalance));
     }
 
-    function _close(UFixed18 usdcBalance) override internal {
-        // totalUSDCLoans == usdcBalance: Do Nothing
-        if (usdcLoansOutstanding.eq(usdcBalance)) {
-            return;
-
-        // totalUSDCLoans != usdcBalance: rebalance so we have exactly the amount of USDC needed to repay loans.
-        // If we currently have excess USDC, it will be redeemed
-        // If we curerntly have too little USDC, it will be minted
-        } else {
-            rebalance();
-        }
+    function _close() override internal {
+        rebalance();
     }
 
-    function _toToken6Amount(UFixed18 amount) internal pure returns (UFixed18 token6Amount) {
-        token6Amount = UFixed18.wrap(Math.ceilDiv(UFixed18.unwrap(amount), 1e12) * 1e12);
+    function _validToken6Amount(UFixed18 amount) internal pure returns (bool) {
+        return UFixed18.unwrap(amount) % 1e12 == 0;
     }
 }

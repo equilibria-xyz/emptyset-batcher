@@ -100,18 +100,18 @@ describe('TwoWayBatcher', () => {
     it('loans token exact', async () => {
       usdc.transferFrom.whenCalledWith(usdcLoaner.address, batcher.address, 100_000_000).returns(true)
 
-      await expect(batcher.connect(usdcLoaner).loanUSDC(utils.parseEther('100')))
-        .to.emit(batcher, 'USDCLoaned')
+      await expect(batcher.connect(usdcLoaner).deposit(utils.parseEther('100')))
+        .to.emit(batcher, 'Deposit')
         .withArgs(usdcLoaner.address, utils.parseEther('100'))
         .to.emit(batcher, 'Rebalance')
 
-      expect(await batcher.usdcLoansOutstanding()).to.equal(utils.parseEther('100'))
-      expect(await batcher.depositorToUSDCLoanAmount(usdcLoaner.address)).to.equal(utils.parseEther('100'))
+      expect(await batcher.totalDeposits()).to.equal(utils.parseEther('100'))
+      expect(await batcher.deposits(usdcLoaner.address)).to.equal(utils.parseEther('100'))
     })
 
     it('loans token rounding', async () => {
-      await expect(batcher.connect(usdcLoaner).loanUSDC(utils.parseEther('100').add(1)))
-        .to.be.revertedWithCustomError(batcher, 'TwoWayBatcherInvalidUSDCAmount')
+      await expect(batcher.connect(usdcLoaner).deposit(utils.parseEther('100').add(1)))
+        .to.be.revertedWithCustomError(batcher, 'TwoWayBatcherInvalidTokenAmount')
         .withArgs(utils.parseEther('100').add(1))
     })
 
@@ -119,16 +119,16 @@ describe('TwoWayBatcher', () => {
       usdc.transferFrom.whenCalledWith(usdcLoaner.address, batcher.address, 100_000_000).returns(true)
       usdc.transferFrom.whenCalledWith(usdcLoaner2.address, batcher.address, 200_000_000).returns(true)
 
-      await expect(batcher.connect(usdcLoaner).loanUSDC(utils.parseEther('100')))
-        .to.emit(batcher, 'USDCLoaned')
+      await expect(batcher.connect(usdcLoaner).deposit(utils.parseEther('100')))
+        .to.emit(batcher, 'Deposit')
         .withArgs(usdcLoaner.address, utils.parseEther('100'))
-      await expect(batcher.connect(usdcLoaner2).loanUSDC(utils.parseEther('200')))
-        .to.emit(batcher, 'USDCLoaned')
+      await expect(batcher.connect(usdcLoaner2).deposit(utils.parseEther('200')))
+        .to.emit(batcher, 'Deposit')
         .withArgs(usdcLoaner2.address, utils.parseEther('200'))
 
-      expect(await batcher.usdcLoansOutstanding()).to.equal(utils.parseEther('300'))
-      expect(await batcher.depositorToUSDCLoanAmount(usdcLoaner.address)).to.equal(utils.parseEther('100'))
-      expect(await batcher.depositorToUSDCLoanAmount(usdcLoaner2.address)).to.equal(utils.parseEther('200'))
+      expect(await batcher.totalDeposits()).to.equal(utils.parseEther('300'))
+      expect(await batcher.deposits(usdcLoaner.address)).to.equal(utils.parseEther('100'))
+      expect(await batcher.deposits(usdcLoaner2.address)).to.equal(utils.parseEther('200'))
     })
   })
 
@@ -136,57 +136,57 @@ describe('TwoWayBatcher', () => {
     it('repays token exact', async () => {
       // Loan the amount
       usdc.transferFrom.whenCalledWith(usdcLoaner.address, batcher.address, 100_000_000).returns(true)
-      await batcher.connect(usdcLoaner).loanUSDC(utils.parseEther('100'))
+      await batcher.connect(usdcLoaner).deposit(utils.parseEther('100'))
 
       usdc.balanceOf.whenCalledWith(batcher.address).returns(100_000_000)
       usdc.transfer.whenCalledWith(usdcLoaner.address, 100_000_000).returns(true)
 
-      await expect(batcher.connect(usdcLoaner).repayUSDC(utils.parseEther('100')))
-        .to.emit(batcher, 'USDCRepaid')
+      await expect(batcher.connect(usdcLoaner).withdraw(utils.parseEther('100')))
+        .to.emit(batcher, 'Withdraw')
         .withArgs(usdcLoaner.address, utils.parseEther('100'))
         .to.emit(batcher, 'Rebalance')
 
-      expect(await batcher.usdcLoansOutstanding()).to.equal(0)
-      expect(await batcher.depositorToUSDCLoanAmount(usdcLoaner.address)).to.equal(0)
+      expect(await batcher.totalDeposits()).to.equal(0)
+      expect(await batcher.deposits(usdcLoaner.address)).to.equal(0)
     })
 
     it('repays token rounding', async () => {
-      await expect(batcher.connect(usdcLoaner).repayUSDC(utils.parseEther('100').add(1)))
-        .to.be.revertedWithCustomError(batcher, 'TwoWayBatcherInvalidUSDCAmount')
+      await expect(batcher.connect(usdcLoaner).withdraw(utils.parseEther('100').add(1)))
+        .to.be.revertedWithCustomError(batcher, 'TwoWayBatcherInvalidTokenAmount')
         .withArgs(utils.parseEther('100').add(1))
     })
 
     it('repays token partial rounding', async () => {
-      await expect(batcher.connect(usdcLoaner).repayUSDC(utils.parseEther('50').add(1)))
-        .to.be.revertedWithCustomError(batcher, 'TwoWayBatcherInvalidUSDCAmount')
+      await expect(batcher.connect(usdcLoaner).withdraw(utils.parseEther('50').add(1)))
+        .to.be.revertedWithCustomError(batcher, 'TwoWayBatcherInvalidTokenAmount')
         .withArgs(utils.parseEther('50').add(1))
     })
 
     it('repays token multiple users', async () => {
       usdc.transferFrom.whenCalledWith(usdcLoaner.address, batcher.address, 100_000_000).returns(true)
       usdc.transferFrom.whenCalledWith(usdcLoaner2.address, batcher.address, 200_000_000).returns(true)
-      await batcher.connect(usdcLoaner).loanUSDC(utils.parseEther('100'))
-      await batcher.connect(usdcLoaner2).loanUSDC(utils.parseEther('200'))
+      await batcher.connect(usdcLoaner).deposit(utils.parseEther('100'))
+      await batcher.connect(usdcLoaner2).deposit(utils.parseEther('200'))
 
       usdc.balanceOf.whenCalledWith(batcher.address).returns(300_000_000)
       usdc.transfer.whenCalledWith(usdcLoaner.address, 100_000_000).returns(true)
       usdc.transfer.whenCalledWith(usdcLoaner2.address, 101_000_000).returns(true)
-      await expect(batcher.connect(usdcLoaner).repayUSDC(utils.parseEther('100')))
-        .to.emit(batcher, 'USDCRepaid')
+      await expect(batcher.connect(usdcLoaner).withdraw(utils.parseEther('100')))
+        .to.emit(batcher, 'Withdraw')
         .withArgs(usdcLoaner.address, utils.parseEther('100'))
-      await expect(batcher.connect(usdcLoaner2).repayUSDC(utils.parseEther('101')))
-        .to.emit(batcher, 'USDCRepaid')
+      await expect(batcher.connect(usdcLoaner2).withdraw(utils.parseEther('101')))
+        .to.emit(batcher, 'Withdraw')
         .withArgs(usdcLoaner2.address, utils.parseEther('101'))
 
-      expect(await batcher.usdcLoansOutstanding()).to.equal(utils.parseEther('99'))
-      expect(await batcher.depositorToUSDCLoanAmount(usdcLoaner.address)).to.equal(0)
-      expect(await batcher.depositorToUSDCLoanAmount(usdcLoaner2.address)).to.equal(utils.parseEther('99'))
+      expect(await batcher.totalDeposits()).to.equal(utils.parseEther('99'))
+      expect(await batcher.deposits(usdcLoaner.address)).to.equal(0)
+      expect(await batcher.deposits(usdcLoaner2.address)).to.equal(utils.parseEther('99'))
     })
 
     it('repays token rebalance required', async () => {
       // Loan the amount
       usdc.transferFrom.whenCalledWith(usdcLoaner.address, batcher.address, 100_000_000).returns(true)
-      await batcher.connect(usdcLoaner).loanUSDC(utils.parseEther('100'))
+      await batcher.connect(usdcLoaner).deposit(utils.parseEther('100'))
 
       usdc.balanceOf.whenCalledWith(batcher.address).returns(90_000_000)
       dsu.balanceOf.whenCalledWith(batcher.address).returns(utils.parseEther('100'))
@@ -194,20 +194,20 @@ describe('TwoWayBatcher', () => {
       reserve.redeem.whenCalledWith(utils.parseEther('10')).returns()
       usdc.transfer.whenCalledWith(usdcLoaner.address, 100_000_000).returns(true)
 
-      await expect(batcher.connect(usdcLoaner).repayUSDC(utils.parseEther('100')))
-        .to.emit(batcher, 'USDCRepaid')
+      await expect(batcher.connect(usdcLoaner).withdraw(utils.parseEther('100')))
+        .to.emit(batcher, 'Withdraw')
         .withArgs(usdcLoaner.address, utils.parseEther('100'))
 
-      expect(await batcher.usdcLoansOutstanding()).to.equal(0)
-      expect(await batcher.depositorToUSDCLoanAmount(usdcLoaner.address)).to.equal(0)
+      expect(await batcher.totalDeposits()).to.equal(0)
+      expect(await batcher.deposits(usdcLoaner.address)).to.equal(0)
     })
 
     it('reverts on excess repayment', async () => {
       // Loan the amount
       usdc.transferFrom.whenCalledWith(usdcLoaner.address, batcher.address, 100_000_000).returns(true)
-      await batcher.connect(usdcLoaner).loanUSDC(utils.parseEther('100'))
+      await batcher.connect(usdcLoaner).deposit(utils.parseEther('100'))
 
-      await expect(batcher.connect(usdcLoaner).loanUSDC(utils.parseEther('100').add(1))).to.be.reverted
+      await expect(batcher.connect(usdcLoaner).deposit(utils.parseEther('100').add(1))).to.be.reverted
     })
   })
 
@@ -280,7 +280,7 @@ describe('TwoWayBatcher', () => {
     it('rebalances loans oustanding, excess usdc', async () => {
       // Loan the amount
       usdc.transferFrom.whenCalledWith(usdcLoaner.address, batcher.address, 10_000_000).returns(true)
-      await batcher.connect(usdcLoaner).loanUSDC(utils.parseEther('10'))
+      await batcher.connect(usdcLoaner).deposit(utils.parseEther('10'))
 
       dsu.balanceOf.whenCalledWith(batcher.address).returns(utils.parseEther('100'))
       usdc.balanceOf.whenCalledWith(batcher.address).returns(110_000_000)
@@ -293,7 +293,7 @@ describe('TwoWayBatcher', () => {
     it('rebalances loans oustanding, lack of usdc', async () => {
       // Loan the amount
       usdc.transferFrom.whenCalledWith(usdcLoaner.address, batcher.address, 10_000_000).returns(true)
-      await batcher.connect(usdcLoaner).loanUSDC(utils.parseEther('10'))
+      await batcher.connect(usdcLoaner).deposit(utils.parseEther('10'))
 
       dsu.balanceOf.whenCalledWith(batcher.address).returns(utils.parseEther('100'))
       usdc.balanceOf.whenCalledWith(batcher.address).returns(0)
@@ -356,7 +356,7 @@ describe('TwoWayBatcher', () => {
     it('closes outstanding loans', async () => {
       // Loan the amount
       usdc.transferFrom.whenCalledWith(usdcLoaner.address, batcher.address, 10_000_000).returns(true)
-      await batcher.connect(usdcLoaner).loanUSDC(utils.parseEther('10'))
+      await batcher.connect(usdcLoaner).deposit(utils.parseEther('10'))
 
       // Rebalance - keep 10 USDC to repay loans
       usdc.balanceOf.whenCalledWith(batcher.address).returns(110_000_000)
