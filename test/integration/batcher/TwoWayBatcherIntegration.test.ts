@@ -251,7 +251,7 @@ describe('TwoWayBatcher', () => {
         await proto.usdc.connect(proto.user2).approve(batcher.address, 1_000_000_000_000)
       })
 
-      it('loans token exact', async () => {
+      it('deposits token exact', async () => {
         const { user, usdc } = proto
         await expect(batcher.connect(user).deposit(utils.parseEther('100')))
           .to.emit(batcher, 'Deposit')
@@ -264,14 +264,14 @@ describe('TwoWayBatcher', () => {
         expect(await batcher.balanceOf(user.address)).to.equal(utils.parseEther('100'))
       })
 
-      it('loans token rounding', async () => {
+      it('deposits token rounding', async () => {
         const { user } = proto
         await expect(batcher.connect(user).deposit(utils.parseEther('100').add(1)))
           .to.be.revertedWithCustomError(batcher, 'TwoWayBatcherInvalidTokenAmount')
           .withArgs(utils.parseEther('100').add(1))
       })
 
-      it('loans token multiple', async () => {
+      it('deposits token multiple', async () => {
         const { user, user2, usdc } = proto
         await expect(batcher.connect(user).deposit(utils.parseEther('100')))
           .to.emit(batcher, 'Deposit')
@@ -297,7 +297,7 @@ describe('TwoWayBatcher', () => {
         await batcher.connect(proto.user).deposit(utils.parseEther('100'))
       })
 
-      it('repays token exact', async () => {
+      it('withdraws token exact', async () => {
         const { usdc, user } = proto
 
         await expect(batcher.connect(user).withdraw(utils.parseEther('100')))
@@ -311,7 +311,7 @@ describe('TwoWayBatcher', () => {
         expect(await usdc.balanceOf(user.address)).to.equal(1_000_000_000_000)
       })
 
-      it('repays token rounding', async () => {
+      it('withdraws token rounding', async () => {
         const { user } = proto
 
         await expect(batcher.connect(user).withdraw(utils.parseEther('100').add(1)))
@@ -319,7 +319,7 @@ describe('TwoWayBatcher', () => {
           .withArgs(utils.parseEther('100').add(1))
       })
 
-      it('repays token partial rounding', async () => {
+      it('withdraws token partial rounding', async () => {
         const { user } = proto
 
         await expect(batcher.connect(user).withdraw(utils.parseEther('50').add(1)))
@@ -327,7 +327,7 @@ describe('TwoWayBatcher', () => {
           .withArgs(utils.parseEther('50').add(1))
       })
 
-      it('repays token multiple users', async () => {
+      it('withdraws token multiple users', async () => {
         const { usdc, user, user2 } = proto
 
         await batcher.connect(user2).deposit(utils.parseEther('200'))
@@ -358,7 +358,7 @@ describe('TwoWayBatcher', () => {
           await batcher.connect(user2).unwrap(utils.parseEther('100'), user2.address)
         })
 
-        it('repays token full', async () => {
+        it('withdraws token full', async () => {
           const { usdc, user } = proto
 
           await expect(batcher.connect(user).withdraw(utils.parseEther('100')))
@@ -374,7 +374,7 @@ describe('TwoWayBatcher', () => {
           expect(await usdc.balanceOf(user.address)).to.equal(1_000_000_000_000)
         })
 
-        it('repays token partial', async () => {
+        it('withdraws token partial', async () => {
           const { usdc, user } = proto
 
           await expect(batcher.connect(user).withdraw(utils.parseEther('51')))
@@ -391,7 +391,7 @@ describe('TwoWayBatcher', () => {
         })
       })
 
-      it('reverts on excess repayment', async () => {
+      it('reverts on excess withdrawal', async () => {
         await expect(batcher.connect(proto.user).withdraw(utils.parseEther('101'))).to.be.reverted
       })
     })
@@ -699,7 +699,7 @@ describe('TwoWayBatcher', () => {
           await proto.dsu.connect(proto.usdcHolder).transfer(batcher.address, utils.parseEther('200'))
         })
 
-        it('closes oustanding loans, excess usdc', async () => {
+        it('closes oustanding deposits, excess usdc', async () => {
           const { usdc, reserve, deployer, user2 } = proto
           await batcher.connect(user2).wrap(utils.parseEther('100'), user2.address)
 

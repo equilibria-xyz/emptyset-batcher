@@ -27,7 +27,9 @@ contract TwoWayBatcher is UReentrancyGuard, Batcher, ERC20 {
     constructor(IEmptySetReserve reserve, Token18 dsu, Token6 usdc)
     Batcher(reserve, dsu, usdc)
     ERC20("Batcher Deposit", "BDEP")
-    { } // solhint-disable-line no-empty-blocks
+    {
+        __UReentrancyGuard__initialize();
+    }
 
     /**
      * @notice Deposits USDC for Batcher to use in unwrapping flows
@@ -69,17 +71,17 @@ contract TwoWayBatcher is UReentrancyGuard, Batcher, ERC20 {
      * @param usdcBalance Current Batcher USDC balance
      */
     function _rebalance(UFixed18 usdcBalance, UFixed18) override internal {
-        UFixed18 totalSupply = UFixed18.wrap(totalSupply());
-        uint256 balanceToTarget = usdcBalance.compare(totalSupply);
+        UFixed18 totalDeposits = UFixed18.wrap(totalSupply());
+        uint256 balanceToTarget = usdcBalance.compare(totalDeposits);
 
-        // totalUSDCLoans == usdcBalance: Do nothing
+        // totalDeposits == usdcBalance: Do nothing
         if (balanceToTarget == 1) return;
 
-        // usdcBalance > totalUSDCLoans: deposit excess USDC
-        if (balanceToTarget == 2) return RESERVE.mint(usdcBalance.sub(totalSupply));
+        // usdcBalance > totalDeposits: deposit excess USDC
+        if (balanceToTarget == 2) return RESERVE.mint(usdcBalance.sub(totalDeposits));
 
-        // usdcBalance < totalUSDCLoans: pull out more USDC so we have enough to repay loans
-        if (balanceToTarget == 0) return RESERVE.redeem(totalSupply.sub(usdcBalance));
+        // usdcBalance < totalDeposits: pull out more USDC so we have enough to repay deposits
+        if (balanceToTarget == 0) return RESERVE.redeem(totalDeposits.sub(usdcBalance));
     }
 
     /**
