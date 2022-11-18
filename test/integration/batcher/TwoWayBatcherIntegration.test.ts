@@ -245,7 +245,7 @@ describe('TwoWayBatcher', () => {
       })
     })
 
-    describe('#loanUSDC', async () => {
+    describe('#deposit', async () => {
       beforeEach(async () => {
         await proto.usdc.connect(proto.user).approve(batcher.address, 1_000_000_000_000)
         await proto.usdc.connect(proto.user2).approve(batcher.address, 1_000_000_000_000)
@@ -290,7 +290,7 @@ describe('TwoWayBatcher', () => {
       })
     })
 
-    describe('#repayUSDC', async () => {
+    describe('#withdraw', async () => {
       beforeEach(async () => {
         await proto.usdc.connect(proto.user).approve(batcher.address, 1_000_000_000_000)
         await proto.usdc.connect(proto.user2).approve(batcher.address, 1_000_000_000_000)
@@ -486,6 +486,94 @@ describe('TwoWayBatcher', () => {
         expect(await usdc.balanceOf(batcher.address)).to.equal(10_000_000)
 
         expect(await batcher.totalBalance()).to.equal(utils.parseEther('1000010'))
+      })
+
+      context('transferred in dsu', () => {
+        beforeEach(async () => {
+          await batcher.connect(proto.user).deposit(utils.parseEther('10'))
+          await proto.dsu.connect(proto.usdcHolder).transfer(batcher.address, utils.parseEther('200'))
+        })
+
+        it('rebalances loans outstanding, excess usdc', async () => {
+          const { usdc, reserve, user, user2 } = proto
+          await batcher.connect(user2).wrap(utils.parseEther('100'), user2.address)
+
+          await expect(batcher.connect(user).rebalance())
+            .to.emit(batcher, 'Rebalance')
+            .withArgs(utils.parseEther('100'), 0)
+            .to.emit(reserve, 'Mint')
+            .withArgs(batcher.address, utils.parseEther('100'), 100_000_000)
+
+          // Batcher should have 10 USDC to repay outstanding loans
+          expect(await usdc.balanceOf(batcher.address)).to.equal(10_000_000)
+
+          expect(await batcher.totalBalance()).to.equal(utils.parseEther('1000210'))
+        })
+
+        it('rebalances loans outstanding, lack of usdc', async () => {
+          const { dsu, usdc, reserve, user, user2 } = proto
+
+          // Get DSU from reserve and unwrap via batcher
+          await usdc.connect(user2).approve(reserve.address, 10_000_000)
+          await dsu.connect(user2).approve(batcher.address, utils.parseEther('10'))
+          await reserve.connect(user2).mint(utils.parseEther('10'))
+          await batcher.connect(user2).unwrap(utils.parseEther('10'), user2.address)
+
+          await expect(batcher.connect(user).rebalance())
+            .to.emit(batcher, 'Rebalance')
+            .withArgs(0, utils.parseEther('10'))
+            .to.emit(reserve, 'Redeem')
+            .withArgs(batcher.address, utils.parseEther('10'), 10_000_000)
+
+          // Batcher should have 10 USDC to repay outstanding loans
+          expect(await usdc.balanceOf(batcher.address)).to.equal(10_000_000)
+
+          expect(await batcher.totalBalance()).to.equal(utils.parseEther('1000210'))
+        })
+      })
+
+      context('transferred in usdc', () => {
+        beforeEach(async () => {
+          await batcher.connect(proto.user).deposit(utils.parseEther('10'))
+          await proto.usdc.connect(proto.usdcHolder).transfer(batcher.address, 5_000_000)
+        })
+
+        it('rebalances loans outstanding, excess usdc', async () => {
+          const { usdc, reserve, user, user2 } = proto
+          await batcher.connect(user2).wrap(utils.parseEther('100'), user2.address)
+
+          await expect(batcher.connect(user).rebalance())
+            .to.emit(batcher, 'Rebalance')
+            .withArgs(utils.parseEther('105'), 0)
+            .to.emit(reserve, 'Mint')
+            .withArgs(batcher.address, utils.parseEther('105'), 105_000_000)
+
+          // Batcher should have 10 USDC to repay outstanding loans
+          expect(await usdc.balanceOf(batcher.address)).to.equal(10_000_000)
+
+          expect(await batcher.totalBalance()).to.equal(utils.parseEther('1000015'))
+        })
+
+        it('rebalances loans outstanding, lack of usdc', async () => {
+          const { dsu, usdc, reserve, user, user2 } = proto
+
+          // Get DSU from reserve and unwrap via batcher
+          await usdc.connect(user2).approve(reserve.address, 10_000_000)
+          await dsu.connect(user2).approve(batcher.address, utils.parseEther('10'))
+          await reserve.connect(user2).mint(utils.parseEther('10'))
+          await batcher.connect(user2).unwrap(utils.parseEther('10'), user2.address)
+
+          await expect(batcher.connect(user).rebalance())
+            .to.emit(batcher, 'Rebalance')
+            .withArgs(0, utils.parseEther('5'))
+            .to.emit(reserve, 'Redeem')
+            .withArgs(batcher.address, utils.parseEther('5'), 5_000_000)
+
+          // Batcher should have 10 USDC to repay outstanding loans
+          expect(await usdc.balanceOf(batcher.address)).to.equal(10_000_000)
+
+          expect(await batcher.totalBalance()).to.equal(utils.parseEther('1000015'))
+        })
       })
     })
 

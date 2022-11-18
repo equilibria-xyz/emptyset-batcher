@@ -96,7 +96,7 @@ describe('TwoWayBatcher', () => {
     })
   })
 
-  describe('loanUSDC', async () => {
+  describe('deposit', async () => {
     it('loans token exact', async () => {
       usdc.transferFrom.whenCalledWith(usdcLoaner.address, batcher.address, 100_000_000).returns(true)
 
@@ -132,7 +132,7 @@ describe('TwoWayBatcher', () => {
     })
   })
 
-  describe('repayUSDC', async () => {
+  describe('withdraw', async () => {
     it('repays token exact', async () => {
       // Loan the amount
       usdc.transferFrom.whenCalledWith(usdcLoaner.address, batcher.address, 100_000_000).returns(true)
