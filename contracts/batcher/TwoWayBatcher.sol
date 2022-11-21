@@ -80,7 +80,7 @@ contract TwoWayBatcher is UReentrancyGuard, Batcher, ERC20 {
         // usdcBalance > totalDeposits: deposit excess USDC
         if (balanceToTarget == 2) return RESERVE.mint(usdcBalance.sub(totalDeposits));
 
-        // usdcBalance < totalDeposits: pull out more USDC so we have enough to repay deposits
+        // usdcBalance < totalDeposits: pull out more USDC so we have enough to cover deposits
         if (balanceToTarget == 0) return RESERVE.redeem(totalDeposits.sub(usdcBalance));
     }
 

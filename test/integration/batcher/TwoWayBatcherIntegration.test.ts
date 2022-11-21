@@ -460,7 +460,7 @@ describe('TwoWayBatcher', () => {
           .to.emit(reserve, 'Mint')
           .withArgs(batcher.address, utils.parseEther('100'), 100_000_000)
 
-        // Batcher should have 10 USDC to repay deposits outstanding
+        // Batcher should have 10 USDC to cover deposits outstanding
         expect(await usdc.balanceOf(batcher.address)).to.equal(10_000_000)
 
         expect(await batcher.totalBalance()).to.equal(utils.parseEther('1000010'))
@@ -482,7 +482,7 @@ describe('TwoWayBatcher', () => {
           .to.emit(reserve, 'Redeem')
           .withArgs(batcher.address, utils.parseEther('10'), 10_000_000)
 
-        // Batcher should have 10 USDC to repay deposits outstanding
+        // Batcher should have 10 USDC to cover deposits outstanding
         expect(await usdc.balanceOf(batcher.address)).to.equal(10_000_000)
 
         expect(await batcher.totalBalance()).to.equal(utils.parseEther('1000010'))
@@ -504,7 +504,7 @@ describe('TwoWayBatcher', () => {
             .to.emit(reserve, 'Mint')
             .withArgs(batcher.address, utils.parseEther('100'), 100_000_000)
 
-          // Batcher should have 10 USDC to repay deposits outstanding
+          // Batcher should have 10 USDC to cover deposits outstanding
           expect(await usdc.balanceOf(batcher.address)).to.equal(10_000_000)
 
           expect(await batcher.totalBalance()).to.equal(utils.parseEther('1000210'))
@@ -525,7 +525,7 @@ describe('TwoWayBatcher', () => {
             .to.emit(reserve, 'Redeem')
             .withArgs(batcher.address, utils.parseEther('10'), 10_000_000)
 
-          // Batcher should have 10 USDC to repay deposits outstanding
+          // Batcher should have 10 USDC to cover deposits outstanding
           expect(await usdc.balanceOf(batcher.address)).to.equal(10_000_000)
 
           expect(await batcher.totalBalance()).to.equal(utils.parseEther('1000210'))
@@ -548,7 +548,7 @@ describe('TwoWayBatcher', () => {
             .to.emit(reserve, 'Mint')
             .withArgs(batcher.address, utils.parseEther('105'), 105_000_000)
 
-          // Batcher should have 10 USDC to repay deposits outstanding
+          // Batcher should have 10 USDC to cover deposits outstanding
           expect(await usdc.balanceOf(batcher.address)).to.equal(10_000_000)
 
           expect(await batcher.totalBalance()).to.equal(utils.parseEther('1000015'))
@@ -569,7 +569,7 @@ describe('TwoWayBatcher', () => {
             .to.emit(reserve, 'Redeem')
             .withArgs(batcher.address, utils.parseEther('5'), 5_000_000)
 
-          // Batcher should have 10 USDC to repay deposits outstanding
+          // Batcher should have 10 USDC to cover deposits outstanding
           expect(await usdc.balanceOf(batcher.address)).to.equal(10_000_000)
 
           expect(await batcher.totalBalance()).to.equal(utils.parseEther('1000015'))
@@ -666,7 +666,7 @@ describe('TwoWayBatcher', () => {
       it('closes deposits outstanding, lack of usdc', async () => {
         const { reserve, usdc, dsu, deployer, user, user2 } = proto
 
-        // Loan USDC
+        // Deposit USDC
         await batcher.connect(user).deposit(utils.parseEther('10'))
 
         // User2 mints directly and unwraps via Batcher
@@ -713,7 +713,7 @@ describe('TwoWayBatcher', () => {
             .to.emit(batcher, 'Close')
             .withArgs(utils.parseEther('1000200'))
 
-          // Batcher should have 10 USDC to repay deposits outstanding
+          // Batcher should have 10 USDC to cover deposits outstanding
           expect(await usdc.balanceOf(batcher.address)).to.equal(10_000_000)
 
           expect(await reserve.debt(batcher.address)).to.equal(0)
@@ -736,7 +736,7 @@ describe('TwoWayBatcher', () => {
             .to.emit(batcher, 'Close')
             .withArgs(utils.parseEther('1000200'))
 
-          // Batcher should have 10 USDC to repay deposits outstanding
+          // Batcher should have 10 USDC to cover deposits outstanding
           expect(await usdc.balanceOf(batcher.address)).to.equal(10_000_000)
 
           expect(await reserve.debt(batcher.address)).to.equal(0)
@@ -763,7 +763,7 @@ describe('TwoWayBatcher', () => {
             .to.emit(batcher, 'Close')
             .withArgs(utils.parseEther('1000005'))
 
-          // Batcher should have 10 USDC to repay deposits outstanding
+          // Batcher should have 10 USDC to cover deposits outstanding
           expect(await usdc.balanceOf(batcher.address)).to.equal(10_000_000)
 
           expect(await reserve.debt(batcher.address)).to.equal(0)
@@ -785,7 +785,7 @@ describe('TwoWayBatcher', () => {
             .withArgs(batcher.address, utils.parseEther('1000000'))
             .to.emit(batcher, 'Close')
             .withArgs(utils.parseEther('1000005'))
-          // Batcher should have 10 USDC to repay deposits outstanding
+          // Batcher should have 10 USDC to cover deposits outstanding
           expect(await usdc.balanceOf(batcher.address)).to.equal(10_000_000)
 
           expect(await reserve.debt(batcher.address)).to.equal(0)
