@@ -6,9 +6,10 @@ import "@equilibria/root/token/types/Token18.sol";
 import "@equilibria/root/token/types/Token6.sol";
 import "@equilibria/root/control/unstructured/UReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../interfaces/ITwoWayBatcher.sol";
 import "./Batcher.sol";
 
-contract TwoWayBatcher is UReentrancyGuard, Batcher, ERC20 {
+contract TwoWayBatcher is UReentrancyGuard, Batcher, ERC20, ITwoWayBatcher {
     /// @dev Event emitted on USDC deposit
     event Deposit(address indexed account, UFixed18 amount);
     /// @dev Event emitted on USDC withdraw
