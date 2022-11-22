@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../interfaces/ITwoWayBatcher.sol";
 import "./Batcher.sol";
 
-contract TwoWayBatcher is UReentrancyGuard, Batcher, ERC20, ITwoWayBatcher {
+contract TwoWayBatcher is ITwoWayBatcher, UReentrancyGuard, Batcher, ERC20 {
     /**
      * @notice Initializes the TwoWayBatcher
      * @dev Called at implementation instantiate and constant for that implementation.
