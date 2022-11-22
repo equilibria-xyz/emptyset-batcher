@@ -9,7 +9,7 @@ import { NetworkUserConfig } from 'hardhat/types'
 
 import '@typechain/hardhat'
 import '@nomiclabs/hardhat-ethers'
-import '@nomiclabs/hardhat-waffle'
+import '@nomicfoundation/hardhat-chai-matchers'
 import '@nomiclabs/hardhat-etherscan'
 import 'solidity-coverage'
 import 'hardhat-gas-reporter'
@@ -28,10 +28,8 @@ const chainIds = {
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY || ''
 const PRIVATE_KEY_TESTNET = process.env.PRIVATE_KEY_TESTNET || ''
-const MNEMONIC = process.env.MNEMONIC || ''
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || ''
-const INFURA_API_KEY = process.env.INFURA_API_KEY || ''
-const ALCHEMY_MAINNET = process.env.ALCHEMY_MAINNET || ''
+const MAINNET_NODE_URL = process.env.MAINNET_NODE_URL || ''
 const ALCHEMY_KOVAN = process.env.ALCHEMY_KOVAN || ''
 const ALCHEMY_GOERLI = process.env.ALCHEMY_GOERLI || ''
 const FORK_ENABLED = process.env.FORK_ENABLED === 'true' || false
@@ -40,7 +38,7 @@ function getUrl(networkName: string): string {
   switch (networkName) {
     case 'mainnet':
     case 'mainnet-fork':
-      return ALCHEMY_MAINNET
+      return MAINNET_NODE_URL
     case 'kovan':
       return ALCHEMY_KOVAN
     case 'goerli':
@@ -62,23 +60,9 @@ task('accounts', 'Prints the list of accounts', async (args, hre) => {
 
 function createTestnetConfig(network: keyof typeof chainIds): NetworkUserConfig {
   return {
-    accounts: [PRIVATE_KEY_TESTNET],
+    accounts: PRIVATE_KEY_TESTNET ? [PRIVATE_KEY_TESTNET] : [],
     chainId: chainIds[network],
     url: getUrl(network),
-  }
-}
-
-function createGanacheConfig(): NetworkUserConfig {
-  const url = `http://127.0.0.1:8545`
-  return {
-    accounts: {
-      count: 10,
-      initialIndex: 0,
-      mnemonic: MNEMONIC,
-      path: "m/44'/60'/0'/0",
-    },
-    chainId: chainIds['ganache'],
-    url,
   }
 }
 
@@ -89,17 +73,13 @@ const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
     hardhat: {
-      accounts: {
-        mnemonic: MNEMONIC,
-      },
       forking: {
         url: getUrl('mainnet'),
         enabled: FORK_ENABLED,
-        blockNumber: 14343954,
+        blockNumber: 15970190,
       },
       chainId: chainIds.hardhat,
     },
-    ganache: createGanacheConfig(),
     goerli: createTestnetConfig('goerli'),
     kovan: createTestnetConfig('kovan'),
     rinkeby: createTestnetConfig('rinkeby'),
@@ -107,7 +87,7 @@ const config: HardhatUserConfig = {
     mainnet: {
       chainId: chainIds.mainnet,
       url: getUrl('mainnet'),
-      accounts: [PRIVATE_KEY],
+      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
     },
   },
   namedAccounts: {
