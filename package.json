@@ -1,6 +1,6 @@
 {
-  "name": "emptyset-wrapper",
-  "version": "0.0.4",
+  "name": "emptyset-batcher",
+  "version": "0.1.0",
   "description": "",
   "main": "index.js",
   "scripts": {
