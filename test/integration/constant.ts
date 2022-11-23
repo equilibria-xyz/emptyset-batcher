@@ -8,7 +8,9 @@ export interface Contracts {
 }
 
 export function getContracts(networkName: string): Contracts | null {
-  switch (networkName) {
+  const networkNameWithFork =
+    networkName === 'localhost' && process.env.FORK_ENABLED === 'true' ? process.env.FORK_NETWORK : networkName
+  switch (networkNameWithFork) {
     case 'mainnet':
     case 'mainnet-fork':
       return {
