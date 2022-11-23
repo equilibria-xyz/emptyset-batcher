@@ -18,3 +18,6 @@ types/generated
 .vscode
 
 .idea
+
+# localhost deployments
+deployments/localhost

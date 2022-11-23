@@ -33,6 +33,8 @@ const MAINNET_NODE_URL = process.env.MAINNET_NODE_URL || ''
 const ALCHEMY_KOVAN = process.env.ALCHEMY_KOVAN || ''
 const ALCHEMY_GOERLI = process.env.ALCHEMY_GOERLI || ''
 const FORK_ENABLED = process.env.FORK_ENABLED === 'true' || false
+const FORK_NETWORK = process.env.FORK_NETWORK || 'mainnet'
+const NODE_INTERVAL_MINING = process.env.NODE_INTERVAL_MINING ? parseInt(process.env.NODE_INTERVAL_MINING) : undefined
 
 function getUrl(networkName: string): string {
   switch (networkName) {
@@ -74,11 +76,16 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: getUrl('mainnet'),
+        url: getUrl(FORK_NETWORK),
         enabled: FORK_ENABLED,
         blockNumber: 15970190,
       },
       chainId: chainIds.hardhat,
+      mining: NODE_INTERVAL_MINING
+        ? {
+            interval: NODE_INTERVAL_MINING,
+          }
+        : undefined,
     },
     goerli: createTestnetConfig('goerli'),
     kovan: createTestnetConfig('kovan'),
@@ -100,7 +107,7 @@ const config: HardhatUserConfig = {
         settings: {
           optimizer: {
             enabled: false,
-            runs: 1000,
+            runs: 1000000, // Max allowed by Etherscan verify
           },
           outputSelection: {
             '*': {
@@ -131,6 +138,7 @@ const config: HardhatUserConfig = {
       ropsten: ['external/deployments/ropsten'],
       ganache: ['external/deployments/ganache'],
       hardhat: [FORK_ENABLED ? 'external/deployments/mainnet' : ''],
+      localhost: [FORK_ENABLED ? `external/deployments/${FORK_NETWORK}` : ''],
     },
   },
   contractSizer: {
