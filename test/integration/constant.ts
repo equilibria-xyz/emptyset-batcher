@@ -18,7 +18,7 @@ export function getContracts(networkName: string): Contracts | null {
         USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
         C_USDC: '0x39AA39c021dfbaE8faC545936693aC917d5E7563',
         RESERVE: '0xD05aCe63789cCb35B9cE71d01e4d632a0486Da4B',
-        TIMELOCK: '0x13b7A79e050ef2C3fDc858EFD5c066c3655be841',
+        TIMELOCK: '0x1bba92F379375387bf8F927058da14D47464cB7A',
         USDC_HOLDER: '0x0A59649758aa4d66E25f08Dd01271e891fe52199',
       }
     case 'kovan':
@@ -36,7 +36,7 @@ export function getContracts(networkName: string): Contracts | null {
         USDC: '0x07865c6E87B9F70255377e024ace6630C1Eaa37F',
         C_USDC: '0x73506770799Eb04befb5AaE4734e58C2C624F493',
         RESERVE: '0xbdA59A4405AD32cF81887B54ef5e6D5cB2177d52',
-        TIMELOCK: '0x68F863106ceAD8f615eE023C681aB8eE43e98B9d',
+        TIMELOCK: '0x84A9AC1920540382Ee1Ce15584bFB731d9988782',
         USDC_HOLDER: '0x797c7ab9a2a29089b643e0b97d70fab7d2a07ddd',
       }
     default:
