@@ -33,10 +33,10 @@ Run the Mocha tests:
 $ yarn test
 ```
 
-To run tests against a Mainnet fork, set your `ALCHEMY_KEY` in `.env` and run
+To run tests against a Mainnet fork, set your `MAINNET_NODE_URL` in `.env` and run
 
 ```sh
-$ yarn test-integration
+$ yarn test:integration
 ```
 
 ### Gas Report
