@@ -57,7 +57,7 @@ contract Wrapper is IWrapper, UReentrancyGuard, UOwnable {
 
     /// @notice Wraps all USDC owned by this contract and sends the DSU to `to`
     /// @dev Falls back on the non-batcher wrapping flow if no batcher is set or the batcher has
-    ///      little DSU.
+    ///      too little DSU.
     /// @param to Receiving address of resulting DSU
     function wrap(address to) external nonReentrant {
         UFixed18 usdcBalance = USDC.balanceOf();
@@ -71,7 +71,7 @@ contract Wrapper is IWrapper, UReentrancyGuard, UOwnable {
 
     /// @notice Unwraps all DSU owned by this contract and sends the USDC to `to`
     /// @dev Falls back on the non-batcher wrapping flow if no batcher is set or the batcher has
-    ///      little USDC.
+    ///      too little USDC.
     /// @param to Receiving address of resulting USDC
     function unwrap(address to) external nonReentrant {
         UFixed18 dsuBalance = DSU.balanceOf();
