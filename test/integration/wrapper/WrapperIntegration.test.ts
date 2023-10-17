@@ -8,6 +8,8 @@ import {
   IERC20Metadata__factory,
   MockEmptySetReserve,
   MockEmptySetReserve__factory,
+  MockTwoWayBatcher,
+  MockTwoWayBatcher__factory,
   TwoWayBatcher,
   TwoWayBatcher__factory,
   Wrapper,
@@ -31,8 +33,9 @@ describe('Wrapper', () => {
   let batcher: TwoWayBatcher
   let wrapper: Wrapper
   let wrapperNoBatcher: Wrapper
-  let wrapperInsolventReserve: Wrapper
-  let insolventReserve: MockEmptySetReserve
+  let wrapperInsolvent: Wrapper
+  let reserveInsolvent: MockEmptySetReserve
+  let batcherInsolvent: MockTwoWayBatcher
 
   beforeEach(async () => {
     await reset(process.env.MAINNET_NODE_URL || '', 18333333)
@@ -50,17 +53,24 @@ describe('Wrapper', () => {
       usdc.address,
     )
 
-    insolventReserve = await new MockEmptySetReserve__factory(owner).deploy(
+    reserveInsolvent = await new MockEmptySetReserve__factory(owner).deploy(
       dsu.address,
       usdc.address,
       parseEther('0.9'),
       parseEther('0.9'),
     )
-    wrapperInsolventReserve = await new Wrapper__factory(owner).deploy(
-      insolventReserve.address,
+    wrapperInsolvent = await new Wrapper__factory(owner).deploy(
+      reserveInsolvent.address,
       constants.AddressZero,
       dsu.address,
       usdc.address,
+    )
+    batcherInsolvent = await new MockTwoWayBatcher__factory(owner).deploy(
+      RESERVE_ADDRESS,
+      dsu.address,
+      usdc.address,
+      parseEther('0.9'),
+      parseEther('0.9'),
     )
   })
 
@@ -125,7 +135,7 @@ describe('Wrapper', () => {
       await usdc.connect(user).transfer(wrapper.address, parseUnits(usdcBalance, 6))
       await expect(wrapper.connect(user).wrap(user.address))
         .to.emit(batcher, 'Wrap')
-        .withArgs(user.address, parseEther(usdcBalance))
+        .withArgs(wrapper.address, parseEther(usdcBalance))
       expect((await dsu.balanceOf(user.address)).sub(originalDsuBalance)).to.equal(parseEther(usdcBalance))
     })
 
@@ -142,12 +152,22 @@ describe('Wrapper', () => {
       expect((await dsu.balanceOf(user.address)).sub(originalDsuBalance)).to.equal(parseEther(highUsdcBalance))
     })
 
-    it('does not wrap if partial solvency (reserve)', async () => {
-      await usdc.connect(usdcHolder).transfer(wrapperNoBatcher.address, parseUnits('1000', 6))
-      await wrapperNoBatcher.wrap(insolventReserve.address)
+    it('does not wrap if batcher has partial solvency', async () => {
+      await wrapperInsolvent.setBatcher(batcherInsolvent.address)
 
-      await usdc.connect(user).transfer(wrapperInsolventReserve.address, parseUnits('10', 6))
-      await expect(wrapperInsolventReserve.connect(user).wrap(user.address)).to.reverted
+      await usdc.connect(usdcHolder).transfer(wrapperNoBatcher.address, parseUnits('1000', 6))
+      await wrapperNoBatcher.wrap(batcherInsolvent.address)
+
+      await usdc.connect(user).transfer(wrapperInsolvent.address, parseUnits('10', 6))
+      await expect(wrapperInsolvent.connect(user).wrap(user.address)).to.reverted
+    })
+
+    it('does not wrap if reserve has partial solvency', async () => {
+      await usdc.connect(usdcHolder).transfer(wrapperNoBatcher.address, parseUnits('1000', 6))
+      await wrapperNoBatcher.wrap(reserveInsolvent.address)
+
+      await usdc.connect(user).transfer(wrapperInsolvent.address, parseUnits('10', 6))
+      await expect(wrapperInsolvent.connect(user).wrap(user.address)).to.reverted
     })
   })
 
@@ -168,7 +188,7 @@ describe('Wrapper', () => {
       await dsu.connect(user).transfer(wrapper.address, parseEther(dsuBalance))
       await expect(wrapper.connect(user).unwrap(user.address))
         .to.emit(batcher, 'Unwrap')
-        .withArgs(user.address, parseEther(dsuBalance))
+        .withArgs(wrapper.address, parseEther(dsuBalance))
       expect((await usdc.balanceOf(user.address)).sub(originalUsdcBalance)).to.equal(parseUnits(dsuBalance, 6))
     })
 
@@ -186,11 +206,20 @@ describe('Wrapper', () => {
       expect((await usdc.balanceOf(user.address)).sub(originalUsdcBalance)).to.equal(parseUnits(highDsuBalance, 6))
     })
 
-    it('does not unwrap if partial solvency (reserve)', async () => {
-      await usdc.connect(usdcHolder).transfer(insolventReserve.address, parseUnits('1000', 6))
+    it('does not unwrap if batcher has partial solvency', async () => {
+      await wrapperInsolvent.setBatcher(batcherInsolvent.address)
 
-      await dsu.connect(user).transfer(wrapperInsolventReserve.address, parseEther('10'))
-      await expect(wrapperInsolventReserve.connect(user).unwrap(user.address)).to.reverted
+      await usdc.connect(usdcHolder).transfer(batcherInsolvent.address, parseUnits('1000', 6))
+
+      await dsu.connect(user).transfer(wrapperInsolvent.address, parseEther('10'))
+      await expect(wrapperInsolvent.connect(user).unwrap(user.address)).to.reverted
+    })
+
+    it('does not unwrap if reserve has partial solvency', async () => {
+      await usdc.connect(usdcHolder).transfer(reserveInsolvent.address, parseUnits('1000', 6))
+
+      await dsu.connect(user).transfer(wrapperInsolvent.address, parseEther('10'))
+      await expect(wrapperInsolvent.connect(user).unwrap(user.address)).to.reverted
     })
   })
 })

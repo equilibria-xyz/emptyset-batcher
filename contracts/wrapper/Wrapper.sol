@@ -62,11 +62,11 @@ contract Wrapper is IWrapper, UReentrancyGuard, UOwnable {
     function wrap(address to) external nonReentrant {
         UFixed18 usdcBalance = USDC.balanceOf();
         if (address(batcher) != address(0) && DSU.balanceOf(address(batcher)).gte(usdcBalance)) {
-            batcher.wrap(usdcBalance, to);
+            batcher.wrap(usdcBalance, address(this));
         } else {
             RESERVE.mint(usdcBalance);
-            DSU.push(to, usdcBalance);
         }
+        DSU.push(to, usdcBalance);
     }
 
     /// @notice Unwraps all DSU owned by this contract and sends the USDC to `to`
@@ -76,10 +76,10 @@ contract Wrapper is IWrapper, UReentrancyGuard, UOwnable {
     function unwrap(address to) external nonReentrant {
         UFixed18 dsuBalance = DSU.balanceOf();
         if (address(batcher) != address(0) && USDC.balanceOf(address(batcher)).gte(dsuBalance)) {
-            batcher.unwrap(dsuBalance, to);
+            batcher.unwrap(dsuBalance, address(this));
         } else {
             RESERVE.redeem(dsuBalance);
-            USDC.push(to, dsuBalance);
         }
+        USDC.push(to, dsuBalance);
     }
 }
